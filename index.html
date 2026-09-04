@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Levitation Physics Simulation & R&D Workbench</title>
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: #111726;
+      --card-border: #1e293b;
+      --card-header: #172033;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.2);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --purple: #a855f7;
+      --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.5;
+      padding: 24px;
+      min-height: 100vh;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .header-title h1 {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .header-title p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border: 1px solid;
+    }
+    .badge-primary {
+      background: rgba(56, 189, 248, 0.1);
+      border-color: rgba(56, 189, 248, 0.3);
+      color: var(--accent);
+    }
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      background: #0f172a;
+      padding: 6px;
+      border-radius: 12px;
+      border: 1px solid var(--card-border);
+      overflow-x: auto;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 10px 16px;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      text-align: center;
+    }
+    .tab-btn:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.04);
+    }
+    .tab-btn.active {
+      background: #1e293b;
+      color: var(--accent);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .grid-layout {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 24px;
+    }
+    @media (max-width: 1024px) {
+      .grid-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .control-group {
+      margin-bottom: 18px;
+    }
+    .control-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .control-val {
+      font-family: var(--font-mono);
+      color: var(--accent);
+      font-weight: 600;
+    }
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      background: #1e293b;
+      border-radius: 4px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      box-shadow: 0 0 10px var(--accent);
+      transition: transform 0.1s;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+    select {
+      width: 100%;
+      padding: 8px 12px;
+      background: #0f172a;
+      border: 1px solid var(--card-border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+    }
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .metric-card {
+      background: #0d1322;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+    }
+    .metric-title {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+    .metric-value {
+      font-size: 18px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: #fff;
+    }
+    .metric-unit {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: normal;
+    }
+    .canvas-container {
+      position: relative;
+      width: 100%;
+      height: 380px;
+      background: #070a12;
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 8px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 0.2s;
+    }
+    .btn-secondary {
+      background: #1e293b;
+      color: var(--text);
+      border-color: #334155;
+    }
+    .btn-secondary:hover {
+      background: #334155;
+    }
+    .banner {
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .banner-success {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34d399;
+    }
+    .banner-danger {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #f87171;
+    }
+    .banner-warning {
+      background: rgba(245, 158, 11, 0.1);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #fbbf24;
+    }
+    .info-callout {
+      background: #0d1322;
+      border-left: 3px solid var(--accent);
+      padding: 12px 16px;
+      font-size: 12px;
+      color: #cbd5e1;
+      border-radius: 0 8px 8px 0;
+      line-height: 1.6;
+    }
+    .table-container {
+      overflow-x: auto;
+      margin-top: 14px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    th, td {
+      padding: 8px 12px;
+      text-align: left;
+      border-bottom: 1px solid #1e293b;
+    }
+    th {
+      color: var(--text-muted);
+      font-weight: 600;
+      background: #0f172a;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <div class="header-title">
+      <h1>Sustained Levitation & Gravitational Physics Workbench</h1>
+      <p>Multi-pathway analytical modeling & real-time simulation suite for reactionless lift & metric engineering</p>
+    </div>
+    <div>
+      <span class="badge badge-primary">R&D Lab Suite v2.0</span>
+    </div>
+  </div>
+
+  <!-- Navigation Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('hts')">1. Superconducting & Magnetic Levitation</button>
+    <button class="tab-btn" onclick="switchTab('ehd')">2. Electrohydrodynamic (EHD) Thrust</button>
+    <button class="tab-btn" onclick="switchTab('acoustic')">3. Acoustic Phased Array Levitation</button>
+    <button class="tab-btn" onclick="switchTab('gravity')">Track B: Breakthrough Gravitational Physics</button>
+  </div>
+
+  <!-- TAB 1: SUPERCONDUCTING & MAGNETIC LEVITATION -->
+  <div id="tab-hts" class="tab-content active">
+    <div class="grid-layout">
+      <!-- Controls -->
+      <div class="card">
+        <div class="card-title">
+          <span>HTS Configuration</span>
+          <button class="btn btn-secondary" onclick="resetHtsOscillation()">Perturb Puck</button>
+        </div>
+
+        <div class="control-group">
+          <div class="control-label"><span>Target Payload Mass:</span><span id="hts-mass-val" class="control-val">50.0 kg</span></div>
+          <input type="range" id="hts-mass" min="1" max="100" step="1" value="50" oninput="updateHts()">
+        </div>
+
+        <div class="control-group">
+          <div class="control-label"><span>YBCO Puck Count:</span><span id="hts-pucks-val" class="control-val">14 pucks</span></div>
+          <input type="range" id="hts-pucks" min="1" max="32" step="1" value="14" oninput="updateHts()">
+        </div>
+
+        <div class="control-group">
+          <div class="control-label"><span>Puck Diameter:</span><span id="hts-dia-val" class="control-val">30 mm</span></div>
+          <input type="range" id="hts-dia" min="15" max="50" step="1" value="30" oninput="updateHts()">
+        </div>
+
+        <div class="control-group">
+          <div class="control-label"><span>Field-Cooling Height (z_fc):</span><span id="hts-fc-val" class="control-val">15.0 mm</span></div>
+          <input type="range" id="hts-fc" min="5" max="30" step="0.5" value="15" oninput="updateHts()">
+        </div>
+
+        <div class="control-group">
+          <div class="control-label"><span>Halbach Magnet Grade:</span></div>
+          <select id="hts-grade" onchange="updateHts()">
+            <option value="1.48">NdFeB N52 (Br = 1.48 T)</option>
+            <option value="1.42">NdFeB N48 (Br = 1.42 T)</option>
+            <option value="1.33">NdFeB N42 (Br = 1.33 T)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <div class="control-label"><span>Halbach Period (Wavelength):</span><span id="hts-lambda-val" class="control-val">100 mm</span></div>
+          <input type="range" id="hts-lambda" min="40" max="160" step="5" value="100" oninput="updateHts()">
+        </div>
+
+        <div class="info-callout">
+          <strong>Earnshaw's Theorem Bypass:</strong> Type-II YBCO traps Abrikosov vortices inside crystal pinning centers. Restoring forces act vertically ($k_z$) and laterally ($k_x$) without external sensors or feedback loops.
+        </div>
+      </div>
+
+      <!-- Simulation Display -->
+      <div>
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-title">Equilibrium Gap</div>
+            <div class="metric-value"><span id="hts-gap-out">8.2</span> <span class="metric-unit">mm</span></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">Total Lift Capacity</div>
+            <div class="metric-value"><span id="hts-cap-out">52.4</span> <span class="metric-unit">kg</span></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">Vertical Stiffness (kz)</div>
+            <div class="metric-value"><span id="hts-kz-out">61.5</span> <span class="metric-unit">N/mm</span></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">Lateral Stiffness (kx)</div>
+            <div class="metric-value"><span id="hts-kx-out">21.5</span> <span class="metric-unit">N/mm</span></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">Cryocooler Input</div>
+            <div class="metric-value"><span id="hts-power-out">142</span> <span class="metric-unit">W</span></div>
+          </div>
+        </div>
+
+        <div id="hts-banner" class="banner banner-success">
+          <span>STABLE EQUILIBRIUM: Array levitation force exceeds payload weight.</span>
+          <span id="hts-margin-out">+4.8% Margin</span>
+        </div>
+
+        <div class="canvas-container">
+          <canvas id="htsCanvas"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 2: ELECTROHYDRODYNAMIC (EHD) THRUST -->
+  <div id="tab-ehd" class="tab-content">
+    <div class="grid-layout">
+      <!-- Controls -->
+      <div class="card">
+        <div class="card-title">
+          <span>EHD Thruster Parameters</span>
+          <span class="badge badge-primary">Corona Drift</span>
+        </div>
+
+        <div class="control-group">
+          <div class="control-label"><span>Applied Voltage:</span><span id="ehd-volt-val" class="control-val">35.0 kV</span></div>
+          <input type="range" id="ehd-volt" min="10" max="55" step="0.5" value="35" oninput="updateEhd()">
+        </div>
+
+        <div class="control-group">
+          <div class="control-label"><span>Inter-Electrode Gap (d):</span><span id="ehd-gap-val" class="control-val">40.0 mm</span></div>
+          <input type="range" id="ehd-gap" min="15" max="80" step="1" value="40" oninput="updateEhd()">
+        </div>
+
+        <div class="control-group">
+          <div class="control-label"><span>Corona Wire Radius:</span><span id="ehd-radius-val" class="control-val">50.0 µm</span></div>
+          <input type="range" id="ehd-radius" min="15" max="100" step="5" value="50" oninput="updateEhd()">
+        </div>
+
+        <div class="control-group">
+          <div class="control-label"><span>Total Emitter Length:</span><span id="ehd-len-val" class="control-val">4.0 m</span></div>
+          <input type="range" id="ehd-len" min="0.5" max="10.0" step="0.5" value="4.0" oninput="updateEhd()">
+        </div>
+
+        <div class="control-group">
+          <div class="control-label"><span>Frame & Payload Dry Mass:</span><span id="ehd-mass-val" class="control-val">25.0 g</span></div>
+          <input type="range" id="ehd-mass" min="5" max="80" step="1" value="25" oninput="updateEhd()">
+        </div>
+
+        <div class="control-group">
+          <div class="control-label"><span>HV Converter Spec Power:</span><span id="ehd-sp-val" class="control-val">1500 W/kg</span></div>
+          <input type="range" id="ehd-sp" min="600" max="3000" step="100" value="1500" oninput="updateEhd()">
+        </div>
+
+        <div class="info-callout">
+          <strong>Thrust vs. Power Tradeoff:</strong> EHD thrust is $T = \frac{I \cdot d}{\mu}$. Efficiency $\theta = \frac{1}{\mu E}$ scales inversely with field strength: higher voltage yields higher absolute thrust but lower N/kW efficiency.
+        </div>
+      </div>
+
+      <!-- Simulation Display -->
+      <div>
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-title">Corona Inception</div>
+            <div class="metric-value"><span id="ehd-v0-out">18.4</span> <span class="metric-unit">kV</span></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">EHD Thrust</div>
+            <div class="metric-value"><span id="ehd-thrust-out">74.2</span> <span class="metric-unit">gf</span></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">Electric Power</div>
+            <div class="metric-value"><span id="ehd-pwr-out">38.5</span> <span class="metric-unit">W</span></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">All-Up Mass</div>
+            <div class="metric-value"><span id="ehd-allup-out">58.2</span> <span class="metric-unit">g</span></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">Thrust-to-Weight (TWR)</div>
+            <div class="metric-value"><span id="ehd-twr-out">1.27</span></div>
+          </div>
+        </div>
+
+        <div id="ehd-banner" class="banner banner-success">
+          <span id="ehd-banner-text">UNTETHERED FLIGHT VIABLE (TWR > 1.0)</span>
+          <span id="ehd-netlift-out">+16.0 gf Lift</span>
+        </div>
+
+        <div class="canvas-container">
+          <canvas id="ehdCanvas"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: ACOUSTIC LEVITATION -->
+  <div id="tab-acoustic" class="tab-content">
+    <div class="grid-layout">
+      <!-- Controls -->
+      <div class="card">
+        <div class="card-title">
+          <span>Ultrasonic Trapping Array</span>
+          <span class="badge badge-primary">40 kHz Ultrasound</span>
+        </div>
+
+        <div class="control-group">
+          <div class="control-label"><span>Sound Pressure Level (SPL):</span><span id="ac-spl-val" class="control-val">160.0 dB</span></div>
+          <input type="range" id="ac-spl" min="135" max="168" step="0.5" value="160" oninput="updateAcoustic()">
+        </div>
+
+        <div class="control-group">
+          <div class="control-label"><span>Particle Diameter:</span><span id="ac-dia-val" class="control-val">2.0 mm</span></div>
+          <input type="range" id="ac-dia" min="0.4" max="4.0" step="0.1" value="2.0" oninput="updateAcoustic()">
+        </div>
+
+        <div class="control-group">
+          <div class="control-label"><span>Particle Material:</span></div>
+          <select id="ac-material" onchange="updateAcousticMaterial()">
+            <option value="30">Expanded Polystyrene / Styrofoam (30 kg/m³)</option>
+            <option value="1000" selected>Water Droplet (1000 kg/m³)</option>
+            <option value="950">Polyethylene (950 kg/m³)</option>
+            <option value="2700">Aluminum Particle (2700 kg/m³)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <div class="control-label"><span>Array Gap Distance:</span><span id="ac-gap-val" class="control-val">42.9 mm</span></div>
+          <input type="range" id="ac-gap" min="20" max="80" step="1" value="43" oninput="updateAcoustic()">
+        </div>
+
+        <div class="control-group">
+          <div class="control-label"><span>Acoustic Phase Shift (Steering):</span><span id="ac-phase-val" class="control-val">0°</span></div>
+          <input type="range" id="ac-phase" min="-180" max="180" step="5" value="0" oninput="updateAcoustic()">
+        </div>
+
+        <div class="info-callout">
+          <strong>Gor'kov Potential Wells:</strong> Acoustic radiation force $\mathbf{F} = -\nabla U$ traps dense matter at pressure nodes where velocity gradients generate steep restoring forces.
+        </div>
+      </div>
+
+      <!-- Simulation Display -->
+      <div>
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-title">Wavelength (λ)</div>
+            <div class="metric-value"><span id="ac-lambda-out">8.58</span> <span class="metric-unit">mm</span></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">Node Spacing</div>
+            <div class="metric-value"><span id="ac-node-out">4.29</span> <span class="metric-unit">mm</span></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">Peak Pressure (P0)</div>
+            <div class="metric-value"><span id="ac-p0-out">2.83</span> <span class="metric-unit">kPa</span></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">Radiation Force (Frad)</div>
+            <div class="metric-value"><span id="ac-force-out">184</span> <span class="metric-unit">µN</span></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">Max Density Trap</div>
+            <div class="metric-value"><span id="ac-rho-out">4580</span> <span class="metric-unit">kg/m³</span></div>
+          </div>
+        </div>
+
+        <div id="ac-banner" class="banner banner-success">
+          <span id="ac-banner-text">STABLY TRAPPED IN PRESSURE NODE</span>
+          <span id="ac-limit-out">Rayleigh OK (d &lt; 0.2λ)</span>
+        </div>
+
+        <div class="canvas-container">
+          <canvas id="acousticCanvas"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: TRACK B GRAVITATIONAL PHYSICS -->
+  <div id="tab-gravity" class="tab-content">
+    <div class="grid-layout">
+      <!-- Controls -->
+      <div class="card">
+        <div class="card-title">
+          <span>Metric & High-Field Parameters</span>
+          <span class="badge badge-primary">Relativity & QFT</span>
+        </div>
+
+        <div class="control-group">
+          <div class="control-label"><span>Casimir Plate Separation:</span><span id="qm-gap-val" class="control-val">10.0 nm</span></div>
+          <input type="range" id="qm-gap" min="1" max="100" step="1" value="10" oninput="updateGravity()">
+        </div>
+
+        <div class="control-group">
+          <div class="control-label"><span>Lab Rotor Mass:</span><span id="qm-mass-val" class="control-val">10.0 kg</span></div>
+          <input type="range" id="qm-mass" min="1" max="50" step="1" value="10" oninput="updateGravity()">
+        </div>
+
+        <div class="control-group">
+          <div class="control-label"><span>Rotor Angular Speed:</span><span id="qm-rpm-val" class="control-val">10,000 RPM</span></div>
+          <input type="range" id="qm-rpm" min="1000" max="60000" step="1000" value="10000" oninput="updateGravity()">
+        </div>
+
+        <div class="control-group">
+          <div class="control-label"><span>High-Field Laser Power:</span><span id="qm-laser-val" class="control-val">1.0 TW</span></div>
+          <input type="range" id="qm-laser" min="0.1" max="10.0" step="0.1" value="1.0" oninput="updateGravity()">
+        </div>
+
+        <div class="control-group">
+          <div class="control-label"><span>Static B-Field (Gertsenshtein):</span><span id="qm-bfield-val" class="control-val">10.0 T</span></div>
+          <input type="range" id="qm-bfield" min="1" max="25" step="1" value="10" oninput="updateGravity()">
+        </div>
+
+        <div class="info-callout">
+          <strong>Quantum Energy Inequalities (QEI):</strong> Ford-Roman bounds prohibit static macroscopic negative energy concentrations. Any negative pulse is restricted to duration $\Delta t \le d / c$, precluding macroscopic reactionless warp metrics.
+        </div>
+      </div>
+
+      <!-- Simulation Display -->
+      <div>
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-title">Casimir Energy Density</div>
+            <div class="metric-value"><span id="qm-rho-out">-5.2e2</span> <span class="metric-unit">J/m³</span></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">QEI Duration Limit</div>
+            <div class="metric-value"><span id="qm-dt-out">3.3e-17</span> <span class="metric-unit">s</span></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">Lab Frame Dragging (Bg)</div>
+            <div class="metric-value"><span id="qm-bg-out">1.1e-26</span> <span class="metric-unit">s⁻¹</span></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">Detection Gap</div>
+            <div class="metric-value"><span id="qm-gap-orders">14.0</span> <span class="metric-unit">orders</span></div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-title">GW Converted Power</div>
+            <div class="metric-value"><span id="qm-gw-out">8.3e-29</span> <span class="metric-unit">W</span></div>
+          </div>
+        </div>
+
+        <div class="banner banner-warning">
+          <span>TRACK B STATUS: Theoretical mechanisms valid; macroscopic coupling severely constrained by QEI and G/c⁴.</span>
+          <span>ALPHA-g: ḡ ≈ 1g</span>
+        </div>
+
+        <div class="canvas-container">
+          <canvas id="gravityCanvas"></canvas>
+        </div>
+
+        <div class="card" style="margin-top: 14px;">
+          <div class="card-title">Breakthrough Physics Feasibility Matrix</div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Domain</th>
+                  <th>Core Mechanism</th>
+                  <th>Key Governing Law</th>
+                  <th>Physical Barrier / Current Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Casimir Metric Shielding</strong></td>
+                  <td>Boundary vacuum negative stress-energy $T_{00} < 0$</td>
+                  <td>$\rho_c = -\frac{\pi^2 \hbar c}{720 d^4}$</td>
+                  <td>Ford-Roman QEI forces $\Delta t \le d/c$; microscopic only</td>
+                </tr>
+                <tr>
+                  <td><strong>Gravitomagnetic Detection</strong></td>
+                  <td>Mass current frame-dragging $\mathbf{B}_g = \nabla \times \mathbf{A}_g$</td>
+                  <td>$B_g \approx \frac{G}{c^2 r^3} J$</td>
+                  <td>14 orders of magnitude below cryogenic laser gyro sensitivity</td>
+                </tr>
+                <tr>
+                  <td><strong>Antimatter Gravity</strong></td>
+                  <td>Equivalence Principle test with antihydrogen</td>
+                  <td>$m_g \stackrel{?}{=} m_i$</td>
+                  <td>CERN ALPHA-g (2023) confirmed $a_g = (0.75 \pm 0.21)g$ downwards</td>
+                </tr>
+                <tr>
+                  <td><strong>Gertsenshtein Effect</strong></td>
+                  <td>EM $\rightarrow$ HFGW resonant cross-coupling</td>
+                  <td>$\eta = \frac{G}{c^4} B_0^2 L^2$</td>
+                  <td>$\frac{G}{c^4} \sim 8.26 \times 10^{-45}$; Terawatt laser yields $<10^{-28}\text{ W}$ GW</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Tab Navigation
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+      document.getElementById('tab-' + tabId).classList.add('active');
+      if (tabId === 'hts') drawHts();
+      if (tabId === 'ehd') drawEhd();
+      if (tabId === 'acoustic') drawAcoustic();
+      if (tabId === 'gravity') drawGravity();
+    }
+
+    // ==========================================
+    // 1. HIGH-TEMPERATURE SUPERCONDUCTOR (HTS)
+    // ==========================================
+    let htsPerturb = 0;
+    let htsVelocity = 0;
+    const MU_0 = 4.0 * Math.PI * 1e-7;
+    const G_ACC = 9.80665;
+
+    function resetHtsOscillation() {
+      htsPerturb = 6.0; // Perturb by 6mm
+      htsVelocity = 0;
+    }
+
+    function updateHts() {
+      const mass = parseFloat(document.getElementById('hts-mass').value);
+      const numPucks = parseInt(document.getElementById('hts-pucks').value);
+      const diaMm = parseFloat(document.getElementById('hts-dia').value);
+      const fcGapMm = parseFloat(document.getElementById('hts-fc').value);
+      const b0 = parseFloat(document.getElementById('hts-grade').value);
+      const lambdaMm = parseFloat(document.getElementById('hts-lambda').value);
+
+      document.getElementById('hts-mass-val').innerText = mass.toFixed(1) + ' kg';
+      document.getElementById('hts-pucks-val').innerText = numPucks + ' pucks';
+      document.getElementById('hts-dia-val').innerText = diaMm.toFixed(0) + ' mm';
+      document.getElementById('hts-fc-val').innerText = fcGapMm.toFixed(1) + ' mm';
+      document.getElementById('hts-lambda-val').innerText = lambdaMm.toFixed(0) + ' mm';
+
+      const puckArea = Math.PI * Math.pow((diaMm * 1e-3) / 2, 2);
+      const totalArea = puckArea * numPucks;
+      const k = (2.0 * Math.PI) / (lambdaMm * 1e-3);
+      const targetWeightN = mass * G_ACC;
+
+      // Solve equilibrium gap z_eq where F_vertical(z) = targetWeightN
+      // F_z(z) = (Area * B0^2 / (2 * mu0)) * (e^(-2kz) - e^(-k(z + z_fc)))
+      let zEqMm = 8.0;
+      for (let zTest = 1.0; zTest <= 35.0; zTest += 0.1) {
+        const zm = zTest * 1e-3;
+        const f = (totalArea * Math.pow(b0, 2) / (2.0 * MU_0)) * (
+          Math.exp(-2.0 * k * zm) - Math.exp(-k * (zm + fcGapMm * 1e-3))
+        );
+        if (f <= targetWeightN) {
+          zEqMm = zTest;
+          break;
+        }
+      }
+
+      // Max capacity at 3mm gap
+      const zmMin = 0.003;
+      const maxF = (totalArea * Math.pow(b0, 2) / (2.0 * MU_0)) * (
+        Math.exp(-2.0 * k * zmMin) - Math.exp(-k * (zmMin + fcGapMm * 1e-3))
+      );
+      const maxCapKg = Math.max(0, maxF / G_ACC);
+
+      // Stiffness at equilibrium
+      const zmEq = zEqMm * 1e-3;
+      const fRep = (totalArea * Math.pow(b0, 2) / (2.0 * MU_0)) * Math.exp(-2.0 * k * zmEq);
+      const fPin = (totalArea * Math.pow(b0, 2) / (2.0 * MU_0)) * Math.exp(-k * (zmEq + fcGapMm * 1e-3));
+      const kz = (2.0 * k * fRep - k * fPin) / 1000.0; // N/mm
+      const kx = 0.35 * kz;
+
+      // Thermal budget (closed cycle cooler)
+      const heatLoad = (numPucks * 0.45) + 3.2;
+      const coolerPower = heatLoad / 0.05;
+
+      document.getElementById('hts-gap-out').innerText = zEqMm.toFixed(1);
+      document.getElementById('hts-cap-out').innerText = maxCapKg.toFixed(1);
+      document.getElementById('hts-kz-out').innerText = Math.max(0, kz).toFixed(1);
+      document.getElementById('hts-kx-out').innerText = Math.max(0, kx).toFixed(1);
+      document.getElementById('hts-power-out').innerText = Math.round(coolerPower);
+
+      const banner = document.getElementById('hts-banner');
+      const margin = ((maxCapKg / mass) - 1.0) * 100;
+      if (maxCapKg >= mass) {
+        banner.className = 'banner banner-success';
+        banner.children[0].innerText = 'STABLE EQUILIBRIUM: Restoring flux-pinning force balances payload.';
+        document.getElementById('hts-margin-out').innerText = '+' + margin.toFixed(1) + '% Margin';
+      } else {
+        banner.className = 'banner banner-danger';
+        banner.children[0].innerText = 'INSUFFICIENT LIFT: Payload exceeds magnetic capacity. Add pucks.';
+        document.getElementById('hts-margin-out').innerText = margin.toFixed(1) + '% Deficit';
+      }
+    }
+
+    function drawHts() {
+      const canvas = document.getElementById('htsCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width = canvas.parentElement.clientWidth;
+      const h = canvas.height = 380;
+
+      // Physics update for oscillation
+      const kz = parseFloat(document.getElementById('hts-kz-out').innerText) * 1000; // N/m
+      const mass = parseFloat(document.getElementById('hts-mass').value);
+      const dt = 0.016;
+      const damping = 3.5;
+      const accel = (-kz * (htsPerturb * 1e-3) - damping * htsVelocity) / mass;
+      htsVelocity += accel * dt;
+      htsPerturb += (htsVelocity * dt) * 1e3;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Track parameters
+      const trackY = h - 70;
+      const magnetWidth = 50;
+      const numMagnets = Math.ceil(w / magnetWidth) + 1;
+      const eqGap = parseFloat(document.getElementById('hts-gap-out').innerText);
+      const currentGapPx = (eqGap + htsPerturb) * 4.0;
+
+      // 1. Draw Halbach Array Track
+      const orientations = ['↑', '→', '↓', '←'];
+      for (let i = 0; i < numMagnets; i++) {
+        const mx = i * magnetWidth;
+        const orient = orientations[i % 4];
+        ctx.fillStyle = (i % 2 === 0) ? '#1e293b' : '#334155';
+        ctx.fillRect(mx, trackY, magnetWidth - 2, 50);
+        ctx.strokeStyle = '#475569';
+        ctx.strokeRect(mx, trackY, magnetWidth - 2, 50);
+
+        ctx.fillStyle = '#38bdf8';
+        ctx.font = 'bold 16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(orient, mx + magnetWidth / 2 - 1, trackY + 32);
+      }
+
+      // 2. Draw Magnetic Flux Lines (Halbach upward concentration)
+      ctx.save();
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
+      ctx.lineWidth = 1.5;
+      for (let x = 20; x < w; x += 40) {
+        ctx.beginPath();
+        const archHeight = Math.min(110, Math.sin((x / w) * Math.PI * 4) * 40 + 70);
+        ctx.moveTo(x, trackY);
+        ctx.bezierCurveTo(x + 10, trackY - archHeight, x + 30, trackY - archHeight, x + 40, trackY);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // 3. Draw Levitating Superconducting Cryostat & Pucks
+      const puckWidth = Math.min(260, w * 0.5);
+      const puckX = (w - puckWidth) / 2;
+      const puckY = trackY - currentGapPx - 30;
+
+      // Cryostat outer cold plate
+      ctx.fillStyle = 'rgba(30, 41, 59, 0.9)';
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(puckX, puckY, puckWidth, 30, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      // Pinned YBCO Pucks (Glow & Vortices)
+      const numP = Math.min(8, parseInt(document.getElementById('hts-pucks').value));
+      const pSpacing = puckWidth / (numP + 1);
+      for (let p = 1; p <= numP; p++) {
+        const px = puckX + p * pSpacing;
+        const py = puckY + 15;
+        // Glow
+        const grad = ctx.createRadialGradient(px, py, 2, px, py, 14);
+        grad.addColorStop(0, '#818cf8');
+        grad.addColorStop(1, 'rgba(129, 140, 248, 0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(px, py, 14, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Core
+        ctx.fillStyle = '#a855f7';
+        ctx.beginPath();
+        ctx.arc(px, py, 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Suspension Gap Dimension Arrow
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(puckX - 25, trackY);
+      ctx.lineTo(puckX - 25, puckY + 30);
+      ctx.stroke();
+
+      ctx.fillStyle = '#10b981';
+      ctx.font = '11px monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText(`Gap: ${(eqGap + htsPerturb).toFixed(1)} mm`, puckX - 32, (trackY + puckY + 30) / 2 + 4);
+
+      // Superconducting vapor plume (LN2 effect)
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+      ctx.beginPath();
+      ctx.ellipse(w / 2, puckY + 15, puckWidth / 2 + 15, 12, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      requestAnimationFrame(drawHts);
+    }
+
+    // ==========================================
+    // 2. ELECTROHYDRODYNAMIC (EHD) THRUST
+    // ==========================================
+    let ehdParticles = [];
+    for (let i = 0; i < 60; i++) {
+      ehdParticles.push({
+        x: Math.random(),
+        y: Math.random(),
+        speed: 0.02 + Math.random() * 0.04
+      });
+    }
+
+    function updateEhd() {
+      const vKv = parseFloat(document.getElementById('ehd-volt').value);
+      const gapMm = parseFloat(document.getElementById('ehd-gap').value);
+      const radiusUm = parseFloat(document.getElementById('ehd-radius').value);
+      const wireLen = parseFloat(document.getElementById('ehd-len').value);
+      const frameMassG = parseFloat(document.getElementById('ehd-mass').value);
+      const specPower = parseFloat(document.getElementById('ehd-sp').value);
+
+      document.getElementById('ehd-volt-val').innerText = vKv.toFixed(1) + ' kV';
+      document.getElementById('ehd-gap-val').innerText = gapMm.toFixed(1) + ' mm';
+      document.getElementById('ehd-radius-val').innerText = radiusUm.toFixed(1) + ' µm';
+      document.getElementById('ehd-len-val').innerText = wireLen.toFixed(1) + ' m';
+      document.getElementById('ehd-mass-val').innerText = frameMassG.toFixed(1) + ' g';
+      document.getElementById('ehd-sp-val').innerText = specPower.toFixed(0) + ' W/kg';
+
+      const rw = radiusUm * 1e-6;
+      const d = gapMm * 1e-3;
+      const v = vKv * 1e3;
+      const rwCm = rw * 100.0;
+      const ecVcm = 3.1e4 * 0.9 * (1.0 + 0.308 / Math.sqrt(rwCm));
+      const ec = ecVcm * 100.0;
+      const v0 = ec * rw * Math.log(2.0 * d / rw);
+
+      document.getElementById('ehd-v0-out').innerText = (v0 / 1e3).toFixed(1);
+
+      let currentA = 0;
+      let powerW = 0;
+      let thrustGf = 0;
+
+      if (v > v0) {
+        const mu = 2.0e-4;
+        const eps0 = 8.854e-12;
+        currentA = 2.2 * mu * eps0 * (wireLen / Math.pow(d, 2)) * v * (v - v0);
+        powerW = v * currentA;
+        const thrustN = (currentA * d) / mu;
+        thrustGf = (thrustN / G_ACC) * 1000.0;
+      }
+
+      // Mass calculations for untethered system
+      const converterMassG = (powerW / specPower) * 1000.0;
+      const batteryEnergyWh = powerW * (3.0 / 60.0); // 3 min flight
+      const batteryMassG = (batteryEnergyWh / 180.0) * 1000.0;
+      const totalAllUpMassG = frameMassG + converterMassG + batteryMassG;
+      const twr = totalAllUpMassG > 0 ? (thrustGf / totalAllUpMassG) : 0;
+      const netLiftGf = thrustGf - totalAllUpMassG;
+
+      document.getElementById('ehd-thrust-out').innerText = thrustGf.toFixed(1);
+      document.getElementById('ehd-pwr-out').innerText = powerW.toFixed(1);
+      document.getElementById('ehd-allup-out').innerText = totalAllUpMassG.toFixed(1);
+      document.getElementById('ehd-twr-out').innerText = twr.toFixed(2);
+
+      const banner = document.getElementById('ehd-banner');
+      if (twr >= 1.0) {
+        banner.className = 'banner banner-success';
+        document.getElementById('ehd-banner-text').innerText = 'UNTETHERED FLIGHT VIABLE (TWR ≥ 1.0)';
+        document.getElementById('ehd-netlift-out').innerText = '+' + netLiftGf.toFixed(1) + ' gf Net Lift';
+      } else {
+        banner.className = 'banner banner-danger';
+        document.getElementById('ehd-banner-text').innerText = 'INSUFFICIENT THRUST FOR UNTETHERED FLIGHT (TWR < 1.0)';
+        document.getElementById('ehd-netlift-out').innerText = netLiftGf.toFixed(1) + ' gf Deficit';
+      }
+    }
+
+    function drawEhd() {
+      const canvas = document.getElementById('ehdCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width = canvas.parentElement.clientWidth;
+      const h = canvas.height = 380;
+
+      ctx.clearRect(0, 0, w, h);
+
+      const gapMm = parseFloat(document.getElementById('ehd-gap').value);
+      const vKv = parseFloat(document.getElementById('ehd-volt').value);
+      const v0Kv = parseFloat(document.getElementById('ehd-v0-out').innerText);
+      const isIonizing = vKv > v0Kv;
+
+      const topWireY = 70;
+      const gapPx = Math.min(220, gapMm * 3.5);
+      const bottomFoilY = topWireY + gapPx;
+
+      // 1. Draw Anode Corona Wire
+      ctx.strokeStyle = '#f59e0b';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(40, topWireY);
+      ctx.lineTo(w - 40, topWireY);
+      ctx.stroke();
+
+      ctx.fillStyle = '#f59e0b';
+      ctx.font = '11px monospace';
+      ctx.fillText(`ANODE CORONA WIRE (+${vKv.toFixed(1)} kV)`, 40, topWireY - 12);
+
+      // Corona Glow around wire
+      if (isIonizing) {
+        const glow = ctx.createLinearGradient(0, topWireY - 15, 0, topWireY + 15);
+        glow.addColorStop(0, 'rgba(168, 85, 247, 0)');
+        glow.addColorStop(0.5, 'rgba(168, 85, 247, 0.7)');
+        glow.addColorStop(1, 'rgba(168, 85, 247, 0)');
+        ctx.fillStyle = glow;
+        ctx.fillRect(40, topWireY - 15, w - 80, 30);
+      }
+
+      // 2. Draw Cathode Collector Aerofoil/Foil
+      ctx.fillStyle = '#475569';
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(40, bottomFoilY, w - 80, 24, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '11px monospace';
+      ctx.fillText('CATHODE COLLECTOR FOIL (GROUND)', 40, bottomFoilY + 40);
+
+      // 3. Draw Ion Drift & Electric Wind Particles
+      if (isIonizing) {
+        ctx.fillStyle = '#38bdf8';
+        ehdParticles.forEach(p => {
+          p.y += p.speed;
+          if (p.y > 1.0) {
+            p.y = 0;
+            p.x = Math.random();
+          }
+          const px = 50 + p.x * (w - 100);
+          const py = topWireY + p.y * gapPx;
+          ctx.beginPath();
+          ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // Air momentum arrows (Electric Wind)
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+        ctx.lineWidth = 1.5;
+        for (let ax = 80; ax < w - 60; ax += 80) {
+          ctx.beginPath();
+          ctx.moveTo(ax, bottomFoilY + 50);
+          ctx.lineTo(ax, bottomFoilY + 85);
+          ctx.lineTo(ax - 4, bottomFoilY + 77);
+          ctx.moveTo(ax, bottomFoilY + 85);
+          ctx.lineTo(ax + 4, bottomFoilY + 77);
+          ctx.stroke();
+        }
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillText('IONIC DRIFT & ELECTRIC WIND MOMENTUM (↓)', w / 2 - 110, bottomFoilY + 98);
+      } else {
+        ctx.fillStyle = '#ef4444';
+        ctx.font = '13px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('VOLTAGE BELOW CORONA ONSET (V < V0) - NO IONIZATION', w / 2, (topWireY + bottomFoilY) / 2);
+        ctx.textAlign = 'left';
+      }
+
+      requestAnimationFrame(drawEhd);
+    }
+
+    // ==========================================
+    // 3. ACOUSTIC LEVITATION
+    // ==========================================
+    let acousticParticleY = 0;
+    function updateAcousticMaterial() {
+      updateAcoustic();
+    }
+
+    function updateAcoustic() {
+      const spl = parseFloat(document.getElementById('ac-spl').value);
+      const diaMm = parseFloat(document.getElementById('ac-dia').value);
+      const rhoP = parseFloat(document.getElementById('ac-material').value);
+      const gapMm = parseFloat(document.getElementById('ac-gap').value);
+      const phaseDeg = parseFloat(document.getElementById('ac-phase').value);
+
+      document.getElementById('ac-spl-val').innerText = spl.toFixed(1) + ' dB';
+      document.getElementById('ac-dia-val').innerText = diaMm.toFixed(1) + ' mm';
+      document.getElementById('ac-gap-val').innerText = gapMm.toFixed(1) + ' mm';
+      document.getElementById('ac-phase-val').innerText = phaseDeg.toFixed(0) + '°';
+
+      const c0 = 343.2;
+      const f = 40000.0;
+      const lambda = c0 / f; // ~0.00858 m
+      const k = (2.0 * Math.PI) / lambda;
+      const r = (diaMm * 1e-3) / 2.0;
+
+      // P_rms = 20e-6 * 10^(SPL / 20)
+      const pRms = 20e-6 * Math.pow(10, spl / 20.0);
+      const p0 = pRms * Math.SQRT2;
+
+      // Max trap density: rho_max = (5 * P0^2 * k) / (8 * rho0 * c0^2 * g)
+      const rho0 = 1.204;
+      const rhoMax = (5.0 * Math.pow(p0, 2) * k) / (8.0 * rho0 * Math.pow(c0, 2) * G_ACC);
+
+      // Primary radiation force amplitude
+      const fRadMax = (5.0 * Math.PI * Math.pow(p0, 2) * Math.pow(r, 3) * k) / (6.0 * rho0 * Math.pow(c0, 2));
+
+      // Particle weight
+      const vol = (4.0 / 3.0) * Math.PI * Math.pow(r, 3);
+      const weightN = vol * rhoP * G_ACC;
+
+      document.getElementById('ac-p0-out').innerText = (p0 / 1e3).toFixed(2);
+      document.getElementById('ac-force-out').innerText = (fRadMax * 1e6).toFixed(0);
+      document.getElementById('ac-rho-out').innerText = Math.round(rhoMax);
+
+      const banner = document.getElementById('ac-banner');
+      const isTrappable = fRadMax > weightN && diaMm < (lambda * 1e3 * 0.25);
+
+      if (isTrappable) {
+        banner.className = 'banner banner-success';
+        document.getElementById('ac-banner-text').innerText = 'STABLY TRAPPED IN PRESSURE NODE';
+        document.getElementById('ac-limit-out').innerText = `Frad (${(fRadMax*1e6).toFixed(0)} µN) > Weight (${(weightN*1e6).toFixed(0)} µN)`;
+      } else if (diaMm >= (lambda * 1e3 * 0.25)) {
+        banner.className = 'banner banner-danger';
+        document.getElementById('ac-banner-text').innerText = 'NON-RAYLEIGH INSTABILITY: Particle diameter exceeds λ/4 limit.';
+        document.getElementById('ac-limit-out').innerText = 'Scatter Torques Destabilize';
+      } else {
+        banner.className = 'banner banner-danger';
+        document.getElementById('ac-banner-text').innerText = 'INSUFFICIENT ACOUSTIC INTENSITY: Particle falls under gravity.';
+        document.getElementById('ac-limit-out').innerText = `Deficit: ${(weightN*1e6).toFixed(0)} µN`;
+      }
+    }
+
+    function drawAcoustic() {
+      const canvas = document.getElementById('acousticCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width = canvas.parentElement.clientWidth;
+      const h = canvas.height = 380;
+
+      ctx.clearRect(0, 0, w, h);
+
+      const phaseDeg = parseFloat(document.getElementById('ac-phase').value);
+      const phaseRad = (phaseDeg * Math.PI) / 180.0;
+      const diaMm = parseFloat(document.getElementById('ac-dia').value);
+
+      const topTransY = 50;
+      const botTransY = h - 50;
+      const activeH = botTransY - topTransY;
+
+      // 1. Draw Standing Wave Pressure Field Background
+      const numBands = 8;
+      for (let y = topTransY; y < botTransY; y += 3) {
+        const ny = (y - topTransY) / activeH;
+        // Standing wave spatial distribution with phase shift
+        const pressureMag = Math.abs(Math.cos(ny * Math.PI * 6 + phaseRad));
+        ctx.fillStyle = `rgba(56, 189, 248, ${pressureMag * 0.35})`;
+        ctx.fillRect(80, y, w - 160, 3);
+      }
+
+      // Transducer top array
+      ctx.fillStyle = '#1e293b';
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2;
+      ctx.fillRect(80, topTransY - 20, w - 160, 20);
+      ctx.strokeRect(80, topTransY - 20, w - 160, 20);
+
+      // Transducer bottom array
+      ctx.fillRect(80, botTransY, w - 160, 20);
+      ctx.strokeRect(80, botTransY, w - 160, 20);
+
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = '11px monospace';
+      ctx.fillText('TOP TRANSDUCER ARRAY (40 kHz)', 90, topTransY - 6);
+      ctx.fillText('BOTTOM TRANSDUCER ARRAY (40 kHz)', 90, botTransY + 15);
+
+      // 2. Draw Trapped Particles in Pressure Nodes
+      const nodeYs = [
+        topTransY + activeH * (1 / 6) + (phaseDeg / 180) * 15,
+        topTransY + activeH * (3 / 6) + (phaseDeg / 180) * 15,
+        topTransY + activeH * (5 / 6) + (phaseDeg / 180) * 15
+      ];
+
+      const pRadiusPx = Math.max(3, diaMm * 3.5);
+      nodeYs.forEach((ny, idx) => {
+        if (ny > topTransY + 15 && ny < botTransY - 15) {
+          // Glow
+          const grad = ctx.createRadialGradient(w / 2, ny, 2, w / 2, ny, pRadiusPx * 2.5);
+          grad.addColorStop(0, '#10b981');
+          grad.addColorStop(1, 'rgba(16, 185, 129, 0)');
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(w / 2, ny, pRadiusPx * 2.5, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Particle
+          ctx.fillStyle = '#34d399';
+          ctx.beginPath();
+          ctx.arc(w / 2, ny, pRadiusPx, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#cbd5e1';
+          ctx.font = '10px monospace';
+          ctx.fillText(`Node ${idx + 1}`, w / 2 + pRadiusPx + 8, ny + 3);
+        }
+      });
+
+      requestAnimationFrame(drawAcoustic);
+    }
+
+    // ==========================================
+    // 4. BREAKTHROUGH GRAVITATIONAL PHYSICS
+    // ==========================================
+    function updateGravity() {
+      const gapNm = parseFloat(document.getElementById('qm-gap').value);
+      const rotorM = parseFloat(document.getElementById('qm-mass').value);
+      const rotorRpm = parseFloat(document.getElementById('qm-rpm').value);
+      const laserTw = parseFloat(document.getElementById('qm-laser').value);
+      const bFieldT = parseFloat(document.getElementById('qm-bfield').value);
+
+      document.getElementById('qm-gap-val').innerText = gapNm.toFixed(1) + ' nm';
+      document.getElementById('qm-mass-val').innerText = rotorM.toFixed(1) + ' kg';
+      document.getElementById('qm-rpm-val').innerText = rotorRpm.toLocaleString() + ' RPM';
+      document.getElementById('qm-laser-val').innerText = laserTw.toFixed(1) + ' TW';
+      document.getElementById('qm-bfield-val').innerText = bFieldT.toFixed(1) + ' T';
+
+      const hbar = 1.05457e-34;
+      const c = 2.99792e8;
+      const gNewton = 6.6743e-11;
+
+      // Casimir energy density: rho_c = -(pi^2 * hbar * c) / (720 * d^4)
+      const d = gapNm * 1e-9;
+      const rhoC = -(Math.PI * Math.PI * hbar * c) / (720.0 * Math.pow(d, 4));
+      const dtBound = d / c;
+
+      // Gravitomagnetic field: Bg ~ (G / c^2) * (J / r^3)
+      const omega = (rotorRpm * 2.0 * Math.PI) / 60.0;
+      const rRotor = 0.10;
+      const J = 0.5 * rotorM * Math.pow(rRotor, 2) * omega;
+      const dist = 0.15;
+      const bg = (gNewton / Math.pow(c, 2)) * (J / Math.pow(dist, 3));
+      const gapOrders = Math.log10(1e-12 / bg);
+
+      // Gertsenshtein effect: eta = (G / c^4) * B0^2 * L^2
+      const L = 10.0;
+      const eta = (gNewton / Math.pow(c, 4)) * Math.pow(bFieldT, 2) * Math.pow(L, 2);
+      const gwPower = (laserTw * 1e12) * eta;
+
+      document.getElementById('qm-rho-out').innerText = rhoC.toExponential(2);
+      document.getElementById('qm-dt-out').innerText = dtBound.toExponential(2);
+      document.getElementById('qm-bg-out').innerText = bg.toExponential(2);
+      document.getElementById('qm-gap-orders').innerText = gapOrders.toFixed(1);
+      document.getElementById('qm-gw-out').innerText = gwPower.toExponential(2);
+    }
+
+    function drawGravity() {
+      const canvas = document.getElementById('gravityCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width = canvas.parentElement.clientWidth;
+      const h = canvas.height = 380;
+
+      ctx.clearRect(0, 0, w, h);
+
+      // Draw Casimir Energy Curve (Logarithmic profile)
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(40, 30, w - 80, h - 70);
+      ctx.strokeStyle = '#1e293b';
+      ctx.strokeRect(40, 30, w - 80, h - 70);
+
+      // Axes & grid
+      ctx.strokeStyle = '#334155';
+      ctx.beginPath();
+      ctx.moveTo(80, 50);
+      ctx.lineTo(80, h - 60);
+      ctx.lineTo(w - 60, h - 60);
+      ctx.stroke();
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '11px monospace';
+      ctx.fillText('CASIMIR NEGATIVE ENERGY DENSITY DIVERGENCE (log |T00| vs d)', 90, 48);
+      ctx.fillText('Plate Separation d (nm) →', w / 2 - 60, h - 45);
+
+      // Plot 1/d^4 curve
+      ctx.strokeStyle = '#a855f7';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      for (let px = 80; px <= w - 70; px += 4) {
+        const normX = (px - 80) / (w - 150);
+        const dNm = 1.0 + normX * 40.0;
+        // scaled y
+        const normY = Math.min(1.0, Math.pow(1.0 / dNm, 0.65));
+        const py = (h - 60) - normY * (h - 130);
+        if (px === 80) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      }
+      ctx.stroke();
+
+      // QEI Bound Shading (Prohibited Region)
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
+      ctx.fillRect(80, 50, w - 150, 70);
+      ctx.fillStyle = '#f87171';
+      ctx.font = '11px sans-serif';
+      ctx.fillText('Ford-Roman QEI Prohibited Regime (Static Macroscopic Negative Energy)', 95, 75);
+    }
+
+    // Initialize on page load
+    window.onload = function() {
+      updateHts();
+      updateEhd();
+      updateAcoustic();
+      updateGravity();
+      drawHts();
+      drawEhd();
+      drawAcoustic();
+      drawGravity();
+    };
+
+    window.onresize = function() {
+      drawHts();
+      drawEhd();
+      drawAcoustic();
+      drawGravity();
+    };
+  </script>
+</body>
+</html>
