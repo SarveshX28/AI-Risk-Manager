@@ -1,4 +1,4 @@
-# AI Risk Manager — Pitch Ready
+# AI Risk Manager 
 
 Defense-only merchant fraud risk workbench.
 
