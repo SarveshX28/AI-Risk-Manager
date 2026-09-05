@@ -1,1329 +1,3516 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Levitation Physics Simulation & R&D Workbench</title>
-  <style>
-    :root {
-      --bg: #090d16;
-      --card-bg: #111726;
-      --card-border: #1e293b;
-      --card-header: #172033;
-      --text: #f1f5f9;
-      --text-muted: #94a3b8;
-      --accent: #38bdf8;
-      --accent-glow: rgba(56, 189, 248, 0.2);
-      --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
-      --purple: #a855f7;
-      --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-    }
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      line-height: 1.5;
-      padding: 24px;
-      min-height: 100vh;
-    }
-    .header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 24px;
-      padding-bottom: 20px;
-      border-bottom: 1px solid var(--card-border);
-    }
-    .header-title h1 {
-      font-size: 26px;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-    .header-title p {
-      font-size: 13px;
-      color: var(--text-muted);
-      margin-top: 4px;
-    }
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 4px 10px;
-      border-radius: 9999px;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      border: 1px solid;
-    }
-    .badge-primary {
-      background: rgba(56, 189, 248, 0.1);
-      border-color: rgba(56, 189, 248, 0.3);
-      color: var(--accent);
-    }
-    .tabs {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 24px;
-      background: #0f172a;
-      padding: 6px;
-      border-radius: 12px;
-      border: 1px solid var(--card-border);
-      overflow-x: auto;
-    }
-    .tab-btn {
-      flex: 1;
-      padding: 10px 16px;
-      background: transparent;
-      border: none;
-      border-radius: 8px;
-      color: var(--text-muted);
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
-      white-space: nowrap;
-      text-align: center;
-    }
-    .tab-btn:hover {
-      color: var(--text);
-      background: rgba(255, 255, 255, 0.04);
-    }
-    .tab-btn.active {
-      background: #1e293b;
-      color: var(--accent);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    }
-    .tab-content {
-      display: none;
-    }
-    .tab-content.active {
-      display: block;
-    }
-    .grid-layout {
-      display: grid;
-      grid-template-columns: 360px 1fr;
-      gap: 24px;
-    }
-    @media (max-width: 1024px) {
-      .grid-layout {
-        grid-template-columns: 1fr;
-      }
-    }
-    .card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 14px;
-      padding: 20px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-    }
-    .card-title {
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--text);
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .control-group {
-      margin-bottom: 18px;
-    }
-    .control-label {
-      display: flex;
-      justify-content: space-between;
-      font-size: 12px;
-      font-weight: 500;
-      color: var(--text-muted);
-      margin-bottom: 6px;
-    }
-    .control-val {
-      font-family: var(--font-mono);
-      color: var(--accent);
-      font-weight: 600;
-    }
-    input[type="range"] {
-      width: 100%;
-      height: 6px;
-      background: #1e293b;
-      border-radius: 4px;
-      outline: none;
-      -webkit-appearance: none;
-    }
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: var(--accent);
-      cursor: pointer;
-      box-shadow: 0 0 10px var(--accent);
-      transition: transform 0.1s;
-    }
-    input[type="range"]::-webkit-slider-thumb:hover {
-      transform: scale(1.2);
-    }
-    select {
-      width: 100%;
-      padding: 8px 12px;
-      background: #0f172a;
-      border: 1px solid var(--card-border);
-      border-radius: 6px;
-      color: var(--text);
-      font-size: 13px;
-      outline: none;
-    }
-    .metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-      gap: 12px;
-      margin-bottom: 20px;
-    }
-    .metric-card {
-      background: #0d1322;
-      border: 1px solid #1e293b;
-      border-radius: 10px;
-      padding: 12px;
-      text-align: center;
-    }
-    .metric-title {
-      font-size: 11px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 4px;
-    }
-    .metric-value {
-      font-size: 18px;
-      font-weight: 700;
-      font-family: var(--font-mono);
-      color: #fff;
-    }
-    .metric-unit {
-      font-size: 11px;
-      color: var(--text-muted);
-      font-weight: normal;
-    }
-    .canvas-container {
-      position: relative;
-      width: 100%;
-      height: 380px;
-      background: #070a12;
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      overflow: hidden;
-      margin-bottom: 16px;
-    }
-    canvas {
-      width: 100%;
-      height: 100%;
-      display: block;
-    }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 8px 16px;
-      font-size: 12px;
-      font-weight: 600;
-      border-radius: 6px;
-      cursor: pointer;
-      border: 1px solid transparent;
-      transition: all 0.2s;
-    }
-    .btn-secondary {
-      background: #1e293b;
-      color: var(--text);
-      border-color: #334155;
-    }
-    .btn-secondary:hover {
-      background: #334155;
-    }
-    .banner {
-      padding: 12px 16px;
-      border-radius: 8px;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 13px;
-      font-weight: 500;
-    }
-    .banner-success {
-      background: rgba(16, 185, 129, 0.1);
-      border: 1px solid rgba(16, 185, 129, 0.3);
-      color: #34d399;
-    }
-    .banner-danger {
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      color: #f87171;
-    }
-    .banner-warning {
-      background: rgba(245, 158, 11, 0.1);
-      border: 1px solid rgba(245, 158, 11, 0.3);
-      color: #fbbf24;
-    }
-    .info-callout {
-      background: #0d1322;
-      border-left: 3px solid var(--accent);
-      padding: 12px 16px;
-      font-size: 12px;
-      color: #cbd5e1;
-      border-radius: 0 8px 8px 0;
-      line-height: 1.6;
-    }
-    .table-container {
-      overflow-x: auto;
-      margin-top: 14px;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 12px;
-    }
-    th, td {
-      padding: 8px 12px;
-      text-align: left;
-      border-bottom: 1px solid #1e293b;
-    }
-    th {
-      color: var(--text-muted);
-      font-weight: 600;
-      background: #0f172a;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#06101d">
+<meta name="description" content="AI Risk Manager — merchant fraud intelligence">
+<title>AI Risk Manager — Merchant Risk Intelligence</title>
+
+<style>
+*{box-sizing:border-box}
+
+:root{
+  --bg:#06101d;
+  --panel:#0d1d30;
+  --panel2:#10263e;
+  --line:#203b58;
+  --text:#edf6ff;
+  --muted:#8da4bc;
+  --blue:#61b8ff;
+  --cyan:#67defb;
+  --green:#55d69b;
+  --yellow:#f3c96d;
+  --red:#ff7088;
+}
+
+html{scroll-behavior:smooth}
+
+body{
+  margin:0;
+  background:
+    radial-gradient(circle at 80% -10%,rgba(80,150,255,.16),transparent 35%),
+    radial-gradient(circle at 10% 30%,rgba(50,210,255,.07),transparent 30%),
+    var(--bg);
+  color:var(--text);
+  font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  font-size:14px;
+}
+
+button,input{
+  font:inherit;
+}
+
+button{
+  cursor:pointer;
+}
+
+.app{
+  min-height:100vh;
+  display:flex;
+}
+
+/* SIDEBAR */
+
+.sidebar{
+  position:fixed;
+  z-index:20;
+  left:0;
+  top:0;
+  bottom:0;
+  width:235px;
+  padding:22px 14px;
+  background:rgba(5,15,28,.95);
+  border-right:1px solid var(--line);
+  backdrop-filter:blur(18px);
+}
+
+.brand{
+  display:flex;
+  gap:11px;
+  align-items:center;
+  padding:5px 8px 25px;
+}
+
+.logo{
+  width:38px;
+  height:38px;
+  border-radius:11px;
+  display:grid;
+  place-items:center;
+  background:linear-gradient(135deg,#67c9ff,#747cff);
+  color:#06101d;
+  font-weight:950;
+  box-shadow:0 10px 30px rgba(80,160,255,.25);
+}
+
+.brand-title{
+  font-weight:850;
+  font-size:14px;
+}
+
+.brand-sub{
+  color:#7890a8;
+  font-size:10px;
+  margin-top:2px;
+}
+
+.nav{
+  display:grid;
+  gap:5px;
+}
+
+.nav button{
+  width:100%;
+  border:1px solid transparent;
+  background:transparent;
+  color:#91a7bf;
+  text-align:left;
+  padding:11px 12px;
+  border-radius:10px;
+  transition:.2s;
+}
+
+.nav button:hover,
+.nav button.active{
+  background:#10243b;
+  border-color:#244361;
+  color:#fff;
+}
+
+.nav-icon{
+  display:inline-block;
+  width:24px;
+  text-align:center;
+}
+
+.safety{
+  position:absolute;
+  left:14px;
+  right:14px;
+  bottom:17px;
+  background:#0a1b2c;
+  border:1px solid #21415e;
+  border-radius:12px;
+  padding:12px;
+  color:#879db5;
+  font-size:10px;
+  line-height:1.5;
+}
+
+.safety strong{
+  color:var(--green);
+}
+
+/* MAIN */
+
+.main{
+  margin-left:235px;
+  width:calc(100% - 235px);
+}
+
+.topbar{
+  height:68px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 30px;
+  border-bottom:1px solid var(--line);
+  background:rgba(6,16,29,.75);
+  backdrop-filter:blur(16px);
+  position:sticky;
+  top:0;
+  z-index:10;
+}
+
+.crumb{
+  color:var(--muted);
+  font-size:12px;
+}
+
+.crumb b{
+  color:var(--text);
+}
+
+.live{
+  color:#92a8bf;
+  font-size:11px;
+  display:flex;
+  gap:7px;
+  align-items:center;
+}
+
+.live-dot{
+  width:7px;
+  height:7px;
+  background:var(--green);
+  border-radius:50%;
+  box-shadow:0 0 13px var(--green);
+}
+
+.content{
+  max-width:1450px;
+  margin:auto;
+  padding:30px;
+}
+
+.view{
+  display:none;
+}
+
+.view.active{
+  display:block;
+  animation:fade .25s ease;
+}
+
+@keyframes fade{
+  from{
+    opacity:0;
+    transform:translateY(5px);
+  }
+  to{
+    opacity:1;
+    transform:none;
+  }
+}
+
+/* HERO */
+
+.hero{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:20px;
+  margin-bottom:23px;
+}
+
+.eyebrow{
+  color:#63baff;
+  font-size:10px;
+  font-weight:850;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+}
+
+h1{
+  font-size:31px;
+  line-height:1.1;
+  margin:7px 0;
+}
+
+.subtitle{
+  margin:0;
+  color:var(--muted);
+  max-width:760px;
+}
+
+/* BUTTONS */
+
+.btn{
+  border:1px solid #2a4b6b;
+  background:#10283f;
+  color:#eaf5ff;
+  border-radius:9px;
+  padding:10px 14px;
+  font-weight:750;
+  transition:.2s;
+}
+
+.btn:hover{
+  filter:brightness(1.1);
+  transform:translateY(-1px);
+}
+
+.btn-primary{
+  border:0;
+  background:linear-gradient(135deg,#62baff,#777fff);
+  color:#05101d;
+  box-shadow:0 10px 30px rgba(80,150,255,.18);
+}
+
+/* CARDS */
+
+.card{
+  background:
+    linear-gradient(
+      145deg,
+      rgba(15,32,52,.97),
+      rgba(8,21,36,.96)
+    );
+  border:1px solid var(--line);
+  border-radius:16px;
+  box-shadow:0 18px 55px rgba(0,0,0,.23);
+}
+
+.kpi{
+  padding:17px;
+}
+
+.cards{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:13px;
+}
+
+.label{
+  color:#7e96ae;
+  font-size:9px;
+  text-transform:uppercase;
+  letter-spacing:.11em;
+}
+
+.value{
+  font-size:26px;
+  font-weight:900;
+  margin:5px 0 2px;
+}
+
+.green-text{
+  color:var(--green);
+}
+
+.muted{
+  color:var(--muted);
+  font-size:10px;
+}
+
+.grid2{
+  display:grid;
+  grid-template-columns:1.12fr .88fr;
+  gap:15px;
+  margin-top:15px;
+}
+
+.grid3{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:15px;
+  margin-top:15px;
+}
+
+.panel{
+  padding:19px;
+}
+
+.panel-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:15px;
+}
+
+.panel-title{
+  font-weight:850;
+  font-size:15px;
+}
+
+.panel-sub{
+  color:#7f96af;
+  font-size:10px;
+  margin-top:2px;
+}
+
+.badge{
+  padding:5px 8px;
+  border-radius:99px;
+  font-size:9px;
+  font-weight:800;
+  border:1px solid #315475;
+  color:#7ec7ff;
+  background:#0c2942;
+}
+
+.badge.green{
+  color:#72e1ac;
+  background:#0d2b23;
+  border-color:#285c49;
+}
+
+.badge.yellow{
+  color:#f6d27e;
+  background:#2b220e;
+  border-color:#655124;
+}
+
+.badge.red{
+  color:#ff8da0;
+  background:#2b1018;
+  border-color:#64313e;
+}
+
+/* RISK */
+
+.risk-boxes{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:9px;
+}
+
+.risk-box{
+  background:#091a2b;
+  border:1px solid #1d3853;
+  padding:13px;
+  border-radius:11px;
+}
+
+.risk-box span{
+  color:#7890a8;
+  font-size:9px;
+}
+
+.risk-box b{
+  display:block;
+  font-size:20px;
+  margin-top:3px;
+}
+
+.bars{
+  display:grid;
+  gap:12px;
+}
+
+.bar-row{
+  display:grid;
+  grid-template-columns:110px 1fr 48px;
+  align-items:center;
+  gap:9px;
+  font-size:10px;
+}
+
+.bar{
+  height:7px;
+  background:#152a42;
+  border-radius:99px;
+  overflow:hidden;
+}
+
+.bar i{
+  display:block;
+  height:100%;
+  width:0;
+  background:linear-gradient(90deg,#59adff,#6ce0ff);
+  border-radius:99px;
+  transition:.4s;
+}
+
+.reason{
+  background:#0c2035;
+  border:1px solid #1c3956;
+  border-radius:9px;
+  padding:9px 10px;
+  font-size:10px;
+  margin-top:7px;
+}
+
+.callout{
+  background:
+    linear-gradient(
+      135deg,
+      rgba(42,112,162,.20),
+      rgba(12,31,51,.65)
+    );
+  border:1px solid #28577b;
+  border-radius:12px;
+  padding:15px;
+}
+
+.callout b{
+  display:block;
+  margin-bottom:4px;
+}
+
+.callout p{
+  margin:0;
+  color:#9bb0c6;
+  font-size:10px;
+}
+
+/* FORMS */
+
+.form-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+
+.field label{
+  display:block;
+  color:#8197ae;
+  font-size:10px;
+  margin-bottom:5px;
+}
+
+.field input{
+  width:100%;
+  background:#071624;
+  color:#edf6ff;
+  border:1px solid #294663;
+  border-radius:9px;
+  padding:10px;
+  outline:none;
+}
+
+.field input:focus{
+  border-color:#60b8ff;
+  box-shadow:0 0 0 3px rgba(96,184,255,.08);
+}
+
+.full{
+  grid-column:1/-1;
+}
+
+/* SCENARIOS */
+
+.scenarios{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+  margin-bottom:15px;
+}
+
+.scenario{
+  text-align:left;
+}
+
+.scenario small{
+  display:block;
+  color:#7890a8;
+  font-size:8px;
+  margin-top:2px;
+}
+
+/* RESULT */
+
+.result{
+  min-height:260px;
+  padding:19px;
+  border:1px solid #294967;
+  border-radius:15px;
+  background:
+    radial-gradient(
+      circle at 90% 0,
+      rgba(75,160,255,.13),
+      transparent 36%
+    ),
+    #0a1c2e;
+}
+
+.big-score{
+  font-size:58px;
+  line-height:1;
+  font-weight:950;
+  margin:4px 0;
+}
+
+.big-score small{
+  font-size:21px;
+  color:#7890a8;
+}
+
+.decision{
+  font-size:14px;
+  font-weight:900;
+  margin-top:6px;
+}
+
+/* TABLE */
+
+.table-wrap{
+  overflow:auto;
+  border:1px solid #1a3550;
+  border-radius:12px;
+}
+
+.table{
+  width:100%;
+  min-width:700px;
+  border-collapse:collapse;
+}
+
+.table th,
+.table td{
+  padding:11px;
+  text-align:left;
+  border-bottom:1px solid #19334d;
+  font-size:10px;
+}
+
+.table th{
+  color:#7189a3;
+  background:#0a1b2c;
+  text-transform:uppercase;
+  letter-spacing:.07em;
+}
+
+/* METRICS */
+
+.metric-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:9px;
+}
+
+.metric{
+  background:#091a2b;
+  border:1px solid #1d3852;
+  border-radius:10px;
+  padding:12px;
+}
+
+.metric small{
+  color:#7890a8;
+  font-size:9px;
+  text-transform:uppercase;
+}
+
+.metric b{
+  display:block;
+  font-size:20px;
+  margin-top:3px;
+}
+
+/* MATRIX */
+
+.matrix{
+  display:grid;
+  grid-template-columns:35px 1fr 1fr;
+  grid-template-rows:28px 90px 90px;
+  gap:3px;
+}
+
+.matrix div{
+  display:grid;
+  place-items:center;
+  background:#0a1b2c;
+  border:1px solid #1a3550;
+  font-size:10px;
+}
+
+.matrix .header{
+  border:0;
+  background:transparent;
+  color:#7890a8;
+}
+
+.matrix .tp{
+  background:#123d32;
+}
+
+.matrix .fp{
+  background:#3b261a;
+}
+
+.matrix .fn{
+  background:#381c27;
+}
+
+/* AUDIT */
+
+.audit-list{
+  display:grid;
+  gap:8px;
+}
+
+.audit-event{
+  display:grid;
+  grid-template-columns:85px 1fr auto;
+  gap:10px;
+  align-items:center;
+  padding:11px;
+  background:#091a2b;
+  border:1px solid #1b3650;
+  border-radius:10px;
+  font-size:10px;
+}
+
+.audit-time{
+  color:#607890;
+}
+
+/* FOOTER */
+
+.footer{
+  text-align:center;
+  color:#5f7690;
+  font-size:9px;
+  margin:28px 0;
+}
+
+/* MOBILE */
+
+@media(max-width:1100px){
+
+  .cards{
+    grid-template-columns:repeat(3,1fr);
+  }
+
+  .grid2,
+  .grid3{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:750px){
+
+  .sidebar{
+    width:62px;
+    padding:15px 7px;
+  }
+
+  .brand-title,
+  .brand-sub,
+  .nav-text,
+  .safety{
+    display:none;
+  }
+
+  .main{
+    margin-left:62px;
+    width:calc(100% - 62px);
+  }
+
+  .topbar{
+    padding:0 15px;
+  }
+
+  .content{
+    padding:17px;
+  }
+
+  .cards{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .hero{
+    display:block;
+  }
+
+  .hero .btn{
+    margin-top:14px;
+  }
+
+  .form-grid{
+    grid-template-columns:1fr;
+  }
+
+  .scenarios{
+    grid-template-columns:1fr 1fr;
+  }
+
+  .metric-grid{
+    grid-template-columns:1fr 1fr;
+  }
+}
+
+@media(max-width:450px){
+
+  .cards{
+    grid-template-columns:1fr;
+  }
+
+  .scenarios,
+  .risk-boxes{
+    grid-template-columns:1fr;
+  }
+}
+</style>
 </head>
+
 <body>
 
-  <!-- Header -->
-  <div class="header">
-    <div class="header-title">
-      <h1>Sustained Levitation & Gravitational Physics Workbench</h1>
-      <p>Multi-pathway analytical modeling & real-time simulation suite for reactionless lift & metric engineering</p>
-    </div>
+<div class="app">
+
+<!-- SIDEBAR -->
+
+<aside class="sidebar">
+
+  <div class="brand">
+    <div class="logo">AR</div>
+
     <div>
-      <span class="badge badge-primary">R&D Lab Suite v2.0</span>
+      <div class="brand-title">AI Risk Manager</div>
+      <div class="brand-sub">Merchant Risk Intelligence</div>
     </div>
   </div>
 
-  <!-- Navigation Tabs -->
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('hts')">1. Superconducting & Magnetic Levitation</button>
-    <button class="tab-btn" onclick="switchTab('ehd')">2. Electrohydrodynamic (EHD) Thrust</button>
-    <button class="tab-btn" onclick="switchTab('acoustic')">3. Acoustic Phased Array Levitation</button>
-    <button class="tab-btn" onclick="switchTab('gravity')">Track B: Breakthrough Gravitational Physics</button>
+  <nav class="nav">
+
+    <button class="active" data-view="overview">
+      <span class="nav-icon">◈</span>
+      <span class="nav-text">Overview</span>
+    </button>
+
+    <button data-view="transactions">
+      <span class="nav-icon">⌁</span>
+      <span class="nav-text">Transactions</span>
+    </button>
+
+    <button data-view="risk">
+      <span class="nav-icon">◉</span>
+      <span class="nav-text">Live Risk Engine</span>
+    </button>
+
+    <button data-view="evaluation">
+      <span class="nav-icon">▦</span>
+      <span class="nav-text">Model Evaluation</span>
+    </button>
+
+    <button data-view="optimizer">
+      <span class="nav-icon">⌘</span>
+      <span class="nav-text">Cost Optimizer</span>
+    </button>
+
+    <button data-view="audit">
+      <span class="nav-icon">≡</span>
+      <span class="nav-text">Audit Trail</span>
+    </button>
+
+  </nav>
+
+  <div class="safety">
+    <strong>● DEFENSE ONLY</strong>
+    <br>
+    Detection, explanation and review.
+    No offensive functionality.
   </div>
 
-  <!-- TAB 1: SUPERCONDUCTING & MAGNETIC LEVITATION -->
-  <div id="tab-hts" class="tab-content active">
-    <div class="grid-layout">
-      <!-- Controls -->
-      <div class="card">
-        <div class="card-title">
-          <span>HTS Configuration</span>
-          <button class="btn btn-secondary" onclick="resetHtsOscillation()">Perturb Puck</button>
-        </div>
+</aside>
 
-        <div class="control-group">
-          <div class="control-label"><span>Target Payload Mass:</span><span id="hts-mass-val" class="control-val">50.0 kg</span></div>
-          <input type="range" id="hts-mass" min="1" max="100" step="1" value="50" oninput="updateHts()">
-        </div>
 
-        <div class="control-group">
-          <div class="control-label"><span>YBCO Puck Count:</span><span id="hts-pucks-val" class="control-val">14 pucks</span></div>
-          <input type="range" id="hts-pucks" min="1" max="32" step="1" value="14" oninput="updateHts()">
-        </div>
+<!-- MAIN -->
 
-        <div class="control-group">
-          <div class="control-label"><span>Puck Diameter:</span><span id="hts-dia-val" class="control-val">30 mm</span></div>
-          <input type="range" id="hts-dia" min="15" max="50" step="1" value="30" oninput="updateHts()">
-        </div>
+<div class="main">
 
-        <div class="control-group">
-          <div class="control-label"><span>Field-Cooling Height (z_fc):</span><span id="hts-fc-val" class="control-val">15.0 mm</span></div>
-          <input type="range" id="hts-fc" min="5" max="30" step="0.5" value="15" oninput="updateHts()">
-        </div>
+<header class="topbar">
 
-        <div class="control-group">
-          <div class="control-label"><span>Halbach Magnet Grade:</span></div>
-          <select id="hts-grade" onchange="updateHts()">
-            <option value="1.48">NdFeB N52 (Br = 1.48 T)</option>
-            <option value="1.42">NdFeB N48 (Br = 1.42 T)</option>
-            <option value="1.33">NdFeB N42 (Br = 1.33 T)</option>
-          </select>
-        </div>
+  <div class="crumb">
+    Risk Command Center /
+    <b id="crumb">Overview</b>
+  </div>
 
-        <div class="control-group">
-          <div class="control-label"><span>Halbach Period (Wavelength):</span><span id="hts-lambda-val" class="control-val">100 mm</span></div>
-          <input type="range" id="hts-lambda" min="40" max="160" step="5" value="100" oninput="updateHts()">
-        </div>
+  <div class="live">
+    <span class="live-dot"></span>
+    DEMO ENVIRONMENT · SYNTHETIC DATA
+  </div>
 
-        <div class="info-callout">
-          <strong>Earnshaw's Theorem Bypass:</strong> Type-II YBCO traps Abrikosov vortices inside crystal pinning centers. Restoring forces act vertically ($k_z$) and laterally ($k_x$) without external sensors or feedback loops.
-        </div>
+</header>
+
+
+<main class="content">
+
+
+<!-- ================= OVERVIEW ================= -->
+
+<section id="overview" class="view active">
+
+  <div class="hero">
+
+    <div>
+
+      <div class="eyebrow">
+        AI-powered merchant protection
       </div>
 
-      <!-- Simulation Display -->
+      <h1>
+        Stop avoidable payment losses.
+      </h1>
+
+      <p class="subtitle">
+        AI Risk Manager scores payment behavior, explains suspicious
+        signals, measures detection quality and helps merchants balance
+        fraud loss against customer friction.
+      </p>
+
+    </div>
+
+    <button class="btn btn-primary" onclick="go('risk')">
+      Run live risk check →
+    </button>
+
+  </div>
+
+
+  <!-- KPI -->
+
+  <div class="cards">
+
+    <div class="card kpi">
+      <div class="label">Precision</div>
+      <div class="value" id="kPrecision">—</div>
+      <div class="muted">held-out test set</div>
+    </div>
+
+    <div class="card kpi">
+      <div class="label">Recall</div>
+      <div class="value" id="kRecall">—</div>
+      <div class="muted">held-out test set</div>
+    </div>
+
+    <div class="card kpi">
+      <div class="label">F1 Score</div>
+      <div class="value" id="kF1">—</div>
+      <div class="muted">balanced metric</div>
+    </div>
+
+    <div class="card kpi">
+      <div class="label">Test Transactions</div>
+      <div class="value" id="kTest">—</div>
+      <div class="green-text muted">20% unseen</div>
+    </div>
+
+    <div class="card kpi">
+      <div class="label">Audit Events</div>
+      <div class="value" id="kEvents">0</div>
+      <div class="muted">this session</div>
+    </div>
+
+  </div>
+
+
+  <div class="grid2">
+
+    <!-- DISTRIBUTION -->
+
+    <div class="card panel">
+
+      <div class="panel-head">
+
+        <div>
+          <div class="panel-title">
+            Risk distribution
+          </div>
+
+          <div class="panel-sub">
+            Held-out transactions scored by the model
+          </div>
+        </div>
+
+        <span class="badge">
+          LIVE MODEL
+        </span>
+
+      </div>
+
+
+      <div class="risk-boxes">
+
+        <div class="risk-box">
+          <span>LOW</span>
+          <b id="distLow">—</b>
+        </div>
+
+        <div class="risk-box">
+          <span>MEDIUM</span>
+          <b id="distMedium">—</b>
+        </div>
+
+        <div class="risk-box">
+          <span>HIGH</span>
+          <b id="distHigh">—</b>
+        </div>
+
+      </div>
+
+
+      <div class="bars" style="margin-top:16px">
+
+        <div class="bar-row">
+          <span>Low risk</span>
+          <div class="bar">
+            <i id="barLow"></i>
+          </div>
+          <b id="pctLow">—</b>
+        </div>
+
+        <div class="bar-row">
+          <span>Medium risk</span>
+          <div class="bar">
+            <i id="barMedium"></i>
+          </div>
+          <b id="pctMedium">—</b>
+        </div>
+
+        <div class="bar-row">
+          <span>High risk</span>
+          <div class="bar">
+            <i id="barHigh"></i>
+          </div>
+          <b id="pctHigh">—</b>
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <!-- VALUE -->
+
+    <div class="card panel">
+
+      <div class="panel-head">
+
+        <div>
+          <div class="panel-title">
+            Why risk-aware AI?
+          </div>
+
+          <div class="panel-sub">
+            A score is only useful when tied to a decision.
+          </div>
+        </div>
+
+      </div>
+
+      <div class="reason">
+        ✓ Measured precision and recall on unseen rows
+      </div>
+
+      <div class="reason">
+        ✓ Explainable transaction-level signals
+      </div>
+
+      <div class="reason">
+        ✓ Threshold simulator exposes FP/FN trade-offs
+      </div>
+
+      <div class="reason">
+        ✓ Every demo decision can be audited
+      </div>
+
+      <div class="callout" style="margin-top:12px">
+
+        <b>
+          Detect → Explain → Measure → Optimize
+        </b>
+
+        <p>
+          The system connects the model output to an
+          operational merchant decision.
+        </p>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <div class="grid3">
+
+    <div class="card panel">
+
+      <div class="panel-title">
+        Decision flow
+      </div>
+
+      <div class="reason">
+        01 · Transaction signals → feature vector
+      </div>
+
+      <div class="reason">
+        02 · Classifier → fraud probability
+      </div>
+
+      <div class="reason">
+        03 · Policy threshold → decision
+      </div>
+
+      <div class="reason">
+        04 · Reason codes → analyst action
+      </div>
+
+    </div>
+
+
+    <div class="card panel">
+
+      <div class="panel-title">
+        Demo scenarios
+      </div>
+
+      <div
+        class="reason"
+        onclick="scenario('normal')"
+        style="cursor:pointer"
+      >
+        🟢 Normal customer →
+      </div>
+
+      <div
+        class="reason"
+        onclick="scenario('velocity')"
+        style="cursor:pointer"
+      >
+        🔴 Velocity spike →
+      </div>
+
+      <div
+        class="reason"
+        onclick="scenario('device')"
+        style="cursor:pointer"
+      >
+        🟡 New account + device →
+      </div>
+
+    </div>
+
+
+    <div class="card panel">
+
+      <div class="panel-title">
+        Safety boundary
+      </div>
+
+      <div class="reason">
+        Defense-only detection
+      </div>
+
+      <div class="reason">
+        No fraud-generation capability
+      </div>
+
+      <div class="reason">
+        No evasion techniques
+      </div>
+
+      <div class="reason">
+        Synthetic development benchmark
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!-- ================= TRANSACTIONS ================= -->
+
+<section id="transactions" class="view">
+
+  <div class="hero">
+
+    <div>
+
+      <div class="eyebrow">
+        Transaction intelligence
+      </div>
+
+      <h1>
+        Risk queue
+      </h1>
+
+      <p class="subtitle">
+        Recent transactions with model scores,
+        signals and recommended actions.
+      </p>
+
+    </div>
+
+    <button
+      class="btn btn-primary"
+      onclick="go('risk')"
+    >
+      Score transaction
+    </button>
+
+  </div>
+
+
+  <div class="card panel">
+
+    <div class="panel-head">
+
       <div>
-        <div class="metrics-grid">
-          <div class="metric-card">
-            <div class="metric-title">Equilibrium Gap</div>
-            <div class="metric-value"><span id="hts-gap-out">8.2</span> <span class="metric-unit">mm</span></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-title">Total Lift Capacity</div>
-            <div class="metric-value"><span id="hts-cap-out">52.4</span> <span class="metric-unit">kg</span></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-title">Vertical Stiffness (kz)</div>
-            <div class="metric-value"><span id="hts-kz-out">61.5</span> <span class="metric-unit">N/mm</span></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-title">Lateral Stiffness (kx)</div>
-            <div class="metric-value"><span id="hts-kx-out">21.5</span> <span class="metric-unit">N/mm</span></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-title">Cryocooler Input</div>
-            <div class="metric-value"><span id="hts-power-out">142</span> <span class="metric-unit">W</span></div>
-          </div>
+
+        <div class="panel-title">
+          Recent transactions
         </div>
 
-        <div id="hts-banner" class="banner banner-success">
-          <span>STABLE EQUILIBRIUM: Array levitation force exceeds payload weight.</span>
-          <span id="hts-margin-out">+4.8% Margin</span>
+        <div class="panel-sub">
+          Synthetic demonstration transactions
         </div>
 
-        <div class="canvas-container">
-          <canvas id="htsCanvas"></canvas>
-        </div>
       </div>
+
+      <span class="badge yellow">
+        REVIEW QUEUE
+      </span>
+
     </div>
+
+
+    <div class="table-wrap">
+
+      <table class="table">
+
+        <thead>
+
+          <tr>
+            <th>Transaction</th>
+            <th>Amount</th>
+            <th>Account Age</th>
+            <th>Velocity</th>
+            <th>Device</th>
+            <th>Risk</th>
+            <th>Decision</th>
+          </tr>
+
+        </thead>
+
+        <tbody id="transactionTable"></tbody>
+
+      </table>
+
+    </div>
+
   </div>
 
-  <!-- TAB 2: ELECTROHYDRODYNAMIC (EHD) THRUST -->
-  <div id="tab-ehd" class="tab-content">
-    <div class="grid-layout">
-      <!-- Controls -->
-      <div class="card">
-        <div class="card-title">
-          <span>EHD Thruster Parameters</span>
-          <span class="badge badge-primary">Corona Drift</span>
-        </div>
+</section>
 
-        <div class="control-group">
-          <div class="control-label"><span>Applied Voltage:</span><span id="ehd-volt-val" class="control-val">35.0 kV</span></div>
-          <input type="range" id="ehd-volt" min="10" max="55" step="0.5" value="35" oninput="updateEhd()">
-        </div>
 
-        <div class="control-group">
-          <div class="control-label"><span>Inter-Electrode Gap (d):</span><span id="ehd-gap-val" class="control-val">40.0 mm</span></div>
-          <input type="range" id="ehd-gap" min="15" max="80" step="1" value="40" oninput="updateEhd()">
-        </div>
 
-        <div class="control-group">
-          <div class="control-label"><span>Corona Wire Radius:</span><span id="ehd-radius-val" class="control-val">50.0 µm</span></div>
-          <input type="range" id="ehd-radius" min="15" max="100" step="5" value="50" oninput="updateEhd()">
-        </div>
+<!-- ================= LIVE RISK ================= -->
 
-        <div class="control-group">
-          <div class="control-label"><span>Total Emitter Length:</span><span id="ehd-len-val" class="control-val">4.0 m</span></div>
-          <input type="range" id="ehd-len" min="0.5" max="10.0" step="0.5" value="4.0" oninput="updateEhd()">
-        </div>
+<section id="risk" class="view">
 
-        <div class="control-group">
-          <div class="control-label"><span>Frame & Payload Dry Mass:</span><span id="ehd-mass-val" class="control-val">25.0 g</span></div>
-          <input type="range" id="ehd-mass" min="5" max="80" step="1" value="25" oninput="updateEhd()">
-        </div>
+  <div class="hero">
 
-        <div class="control-group">
-          <div class="control-label"><span>HV Converter Spec Power:</span><span id="ehd-sp-val" class="control-val">1500 W/kg</span></div>
-          <input type="range" id="ehd-sp" min="600" max="3000" step="100" value="1500" oninput="updateEhd()">
-        </div>
+    <div>
 
-        <div class="info-callout">
-          <strong>Thrust vs. Power Tradeoff:</strong> EHD thrust is $T = \frac{I \cdot d}{\mu}$. Efficiency $\theta = \frac{1}{\mu E}$ scales inversely with field strength: higher voltage yields higher absolute thrust but lower N/kW efficiency.
-        </div>
+      <div class="eyebrow">
+        Live risk engine
       </div>
 
-      <!-- Simulation Display -->
+      <h1>
+        Analyze a payment.
+      </h1>
+
+      <p class="subtitle">
+        Change transaction signals and watch the risk
+        decision update in real time.
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <div class="grid2">
+
+
+    <!-- INPUT -->
+
+    <div class="card panel">
+
+      <div class="panel-head">
+
+        <div>
+
+          <div class="panel-title">
+            Transaction signals
+          </div>
+
+          <div class="panel-sub">
+            Demo feature vector
+          </div>
+
+        </div>
+
+        <span class="badge">
+          MODEL v0.1
+        </span>
+
+      </div>
+
+
+      <div class="scenarios">
+
+        <button
+          class="btn scenario"
+          onclick="scenario('normal')"
+        >
+          <b>Normal</b>
+          <small>Low-risk baseline</small>
+        </button>
+
+        <button
+          class="btn scenario"
+          onclick="scenario('velocity')"
+        >
+          <b>Velocity spike</b>
+          <small>High activity</small>
+        </button>
+
+        <button
+          class="btn scenario"
+          onclick="scenario('device')"
+        >
+          <b>New device</b>
+          <small>Account + device</small>
+        </button>
+
+        <button
+          class="btn scenario"
+          onclick="scenario('amount')"
+        >
+          <b>Amount anomaly</b>
+          <small>Large deviation</small>
+        </button>
+
+      </div>
+
+
+      <div class="form-grid">
+
+        <div class="field">
+
+          <label>
+            Transaction amount ₹
+          </label>
+
+          <input
+            id="amount"
+            type="number"
+            value="8450"
+          >
+
+        </div>
+
+
+        <div class="field">
+
+          <label>
+            Account age days
+          </label>
+
+          <input
+            id="accountAge"
+            type="number"
+            value="2"
+          >
+
+        </div>
+
+
+        <div class="field">
+
+          <label>
+            Transactions / last hour
+          </label>
+
+          <input
+            id="velocity"
+            type="number"
+            value="17"
+          >
+
+        </div>
+
+
+        <div class="field">
+
+          <label>
+            Failed transactions
+          </label>
+
+          <input
+            id="failed"
+            type="number"
+            value="4"
+          >
+
+        </div>
+
+
+        <div class="field">
+
+          <label>
+            Device changed 0/1
+          </label>
+
+          <input
+            id="device"
+            type="number"
+            min="0"
+            max="1"
+            value="1"
+          >
+
+        </div>
+
+
+        <div class="field">
+
+          <label>
+            IP changed 0/1
+          </label>
+
+          <input
+            id="ip"
+            type="number"
+            min="0"
+            max="1"
+            value="1"
+          >
+
+        </div>
+
+
+        <div class="field">
+
+          <label>
+            New device 0/1
+          </label>
+
+          <input
+            id="newDevice"
+            type="number"
+            min="0"
+            max="1"
+            value="1"
+          >
+
+        </div>
+
+
+        <div class="field">
+
+          <label>
+            Amount deviation
+          </label>
+
+          <input
+            id="deviation"
+            type="number"
+            step=".1"
+            value="2.5"
+          >
+
+        </div>
+
+
+        <button
+          class="btn btn-primary full"
+          onclick="analyze()"
+        >
+          Analyze transaction →
+        </button>
+
+      </div>
+
+    </div>
+
+
+    <!-- RESULT -->
+
+    <div>
+
+      <div
+        class="card result"
+        id="result"
+      >
+
+        <div class="muted">
+          RISK DECISION
+        </div>
+
+        <div style="margin-top:15px;color:#7890a8">
+          Run an analysis to see the model output.
+        </div>
+
+      </div>
+
+
+      <div
+        class="card panel"
+        style="margin-top:15px"
+      >
+
+        <div class="panel-head">
+
+          <div>
+
+            <div class="panel-title">
+              Decision policy
+            </div>
+
+            <div class="panel-sub">
+              Current demonstration operating point
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div class="risk-boxes">
+
+          <div class="risk-box">
+
+            <span>0–34</span>
+
+            <b>
+              APPROVE
+            </b>
+
+          </div>
+
+
+          <div class="risk-box">
+
+            <span>35–69</span>
+
+            <b>
+              REVIEW
+            </b>
+
+          </div>
+
+
+          <div class="risk-box">
+
+            <span>70–100</span>
+
+            <b>
+              REVIEW
+            </b>
+
+          </div>
+
+        </div>
+
+        <p class="muted">
+          Final merchant policies should be calibrated
+          against validated business loss data.
+        </p>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!-- ================= EVALUATION ================= -->
+
+<section id="evaluation" class="view">
+
+  <div class="hero">
+
+    <div>
+
+      <div class="eyebrow">
+        Model evaluation
+      </div>
+
+      <h1>
+        Can the detector be trusted?
+      </h1>
+
+      <p class="subtitle">
+        The browser demo trains a lightweight logistic
+        classifier on synthetic development data and evaluates
+        it on a separate held-out test set.
+      </p>
+
+    </div>
+
+    <span class="badge green">
+      HELD-OUT TEST
+    </span>
+
+  </div>
+
+
+  <div class="cards">
+
+    <div class="card kpi">
+      <div class="label">Precision</div>
+      <div class="value" id="evalPrecision">—</div>
+    </div>
+
+    <div class="card kpi">
+      <div class="label">Recall</div>
+      <div class="value" id="evalRecall">—</div>
+    </div>
+
+    <div class="card kpi">
+      <div class="label">F1 Score</div>
+      <div class="value" id="evalF1">—</div>
+    </div>
+
+    <div class="card kpi">
+      <div class="label">False Positive Rate</div>
+      <div class="value" id="evalFPR">—</div>
+    </div>
+
+    <div class="card kpi">
+      <div class="label">Test Rows</div>
+      <div class="value" id="evalRows">—</div>
+    </div>
+
+  </div>
+
+
+  <div class="grid2">
+
+
+    <div class="card panel">
+
+      <div class="panel-head">
+
+        <div>
+
+          <div class="panel-title">
+            Confusion matrix
+          </div>
+
+          <div class="panel-sub">
+            Evaluation threshold = 50%
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <div class="matrix">
+
+        <div class="header"></div>
+
+        <div class="header">
+          Pred. Legit
+        </div>
+
+        <div class="header">
+          Pred. Fraud
+        </div>
+
+
+        <div class="header">
+          Actual Legit
+        </div>
+
+        <div id="tn">
+          —
+        </div>
+
+        <div
+          id="fp"
+          class="fp"
+        >
+          —
+        </div>
+
+
+        <div class="header">
+          Actual Fraud
+        </div>
+
+        <div
+          id="fn"
+          class="fn"
+        >
+          —
+        </div>
+
+        <div
+          id="tp"
+          class="tp"
+        >
+          —
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div class="card panel">
+
+      <div class="panel-title">
+        Evaluation protocol
+      </div>
+
+
+      <div class="reason">
+        <b>01 · Generate data</b>
+        <br>
+        <span class="muted">
+          Synthetic transaction signals for development.
+        </span>
+      </div>
+
+
+      <div class="reason">
+        <b>02 · Split</b>
+        <br>
+        <span class="muted">
+          80% training / 20% held-out testing.
+        </span>
+      </div>
+
+
+      <div class="reason">
+        <b>03 · Fit</b>
+        <br>
+        <span class="muted">
+          Classifier sees training rows only.
+        </span>
+      </div>
+
+
+      <div class="reason">
+        <b>04 · Evaluate</b>
+        <br>
+        <span class="muted">
+          Final metrics use unseen test rows.
+        </span>
+      </div>
+
+
+      <div class="callout" style="margin-top:12px">
+
+        <b>
+          Honest metrics matter.
+        </b>
+
+        <p>
+          For final submission, replace the development
+          benchmark with an allowed public or permitted
+          test-mode dataset.
+        </p>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!-- ================= COST ================= -->
+
+<section id="optimizer" class="view">
+
+  <div class="hero">
+
+    <div>
+
+      <div class="eyebrow">
+        Cost optimizer
+      </div>
+
+      <h1>
+        Choose the threshold, not just the model.
+      </h1>
+
+      <p class="subtitle">
+        Move the threshold and see how precision, recall,
+        false positives, false negatives and estimated loss change.
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <div class="grid2">
+
+
+    <div class="card panel">
+
+      <div class="panel-head">
+
+        <div>
+
+          <div class="panel-title">
+            Operating threshold
+          </div>
+
+          <div class="panel-sub">
+            Applied to held-out probabilities
+          </div>
+
+        </div>
+
+        <span class="badge">
+          <span id="thresholdDisplay">
+            70
+          </span>%
+        </span>
+
+      </div>
+
+
+      <input
+        id="threshold"
+        type="range"
+        min="10"
+        max="95"
+        value="70"
+        style="width:100%;accent-color:#62baff"
+        oninput="updateCost()"
+      >
+
+
+      <div class="metric-grid" style="margin-top:18px">
+
+        <div class="metric">
+          <small>Precision</small>
+          <b id="costPrecision">—</b>
+        </div>
+
+        <div class="metric">
+          <small>Recall</small>
+          <b id="costRecall">—</b>
+        </div>
+
+        <div class="metric">
+          <small>F1</small>
+          <b id="costF1">—</b>
+        </div>
+
+        <div class="metric">
+          <small>False positives</small>
+          <b id="costFP">—</b>
+        </div>
+
+        <div class="metric">
+          <small>False negatives</small>
+          <b id="costFN">—</b>
+        </div>
+
+        <div class="metric">
+          <small>Estimated loss</small>
+          <b id="estimatedCost">—</b>
+        </div>
+
+      </div>
+
+    </div>
+
+
+    <div class="card panel">
+
+      <div class="panel-title">
+        Merchant cost assumptions
+      </div>
+
+      <div
+        class="field"
+        style="margin-top:14px"
+      >
+
+        <label>
+          False-positive cost ₹
+        </label>
+
+        <input
+          id="fpCost"
+          type="number"
+          value="150"
+          oninput="updateCost()"
+        >
+
+      </div>
+
+
+      <div
+        class="field"
+        style="margin-top:13px"
+      >
+
+        <label>
+          False-negative cost ₹
+        </label>
+
+        <input
+          id="fnCost"
+          type="number"
+          value="2500"
+          oninput="updateCost()"
+        >
+
+      </div>
+
+
+      <div
+        class="callout"
+        style="margin-top:16px"
+      >
+
+        <b>
+          Total estimated test-set loss
+        </b>
+
+        <div
+          style="font-size:26px;font-weight:900;margin-top:4px"
+          id="bigCost"
+        >
+          ₹—
+        </div>
+
+        <p>
+          Cost = FP × FP cost + FN × FN cost.
+          These are illustrative assumptions for the demo.
+        </p>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+
+<!-- ================= AUDIT ================= -->
+
+<section id="audit" class="view">
+
+  <div class="hero">
+
+    <div>
+
+      <div class="eyebrow">
+        Governance
+      </div>
+
+      <h1>
+        Every decision leaves a trail.
+      </h1>
+
+      <p class="subtitle">
+        Session audit events show the risk score,
+        decision and primary reasons behind each analysis.
+      </p>
+
+    </div>
+
+    <button
+      class="btn"
+      onclick="clearAudit()"
+    >
+      Clear session
+    </button>
+
+  </div>
+
+
+  <div class="card panel">
+
+    <div class="panel-head">
+
       <div>
-        <div class="metrics-grid">
-          <div class="metric-card">
-            <div class="metric-title">Corona Inception</div>
-            <div class="metric-value"><span id="ehd-v0-out">18.4</span> <span class="metric-unit">kV</span></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-title">EHD Thrust</div>
-            <div class="metric-value"><span id="ehd-thrust-out">74.2</span> <span class="metric-unit">gf</span></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-title">Electric Power</div>
-            <div class="metric-value"><span id="ehd-pwr-out">38.5</span> <span class="metric-unit">W</span></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-title">All-Up Mass</div>
-            <div class="metric-value"><span id="ehd-allup-out">58.2</span> <span class="metric-unit">g</span></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-title">Thrust-to-Weight (TWR)</div>
-            <div class="metric-value"><span id="ehd-twr-out">1.27</span></div>
-          </div>
+
+        <div class="panel-title">
+          Decision audit trail
         </div>
 
-        <div id="ehd-banner" class="banner banner-success">
-          <span id="ehd-banner-text">UNTETHERED FLIGHT VIABLE (TWR > 1.0)</span>
-          <span id="ehd-netlift-out">+16.0 gf Lift</span>
+        <div class="panel-sub">
+          Local browser session · no payment credentials collected
         </div>
 
-        <div class="canvas-container">
-          <canvas id="ehdCanvas"></canvas>
-        </div>
       </div>
+
     </div>
+
+
+    <div
+      id="auditList"
+      class="audit-list"
+    >
+
+      <div class="reason">
+        No decisions yet. Run the Live Risk Engine.
+      </div>
+
+    </div>
+
   </div>
 
-  <!-- TAB 3: ACOUSTIC LEVITATION -->
-  <div id="tab-acoustic" class="tab-content">
-    <div class="grid-layout">
-      <!-- Controls -->
-      <div class="card">
-        <div class="card-title">
-          <span>Ultrasonic Trapping Array</span>
-          <span class="badge badge-primary">40 kHz Ultrasound</span>
-        </div>
+</section>
 
-        <div class="control-group">
-          <div class="control-label"><span>Sound Pressure Level (SPL):</span><span id="ac-spl-val" class="control-val">160.0 dB</span></div>
-          <input type="range" id="ac-spl" min="135" max="168" step="0.5" value="160" oninput="updateAcoustic()">
-        </div>
 
-        <div class="control-group">
-          <div class="control-label"><span>Particle Diameter:</span><span id="ac-dia-val" class="control-val">2.0 mm</span></div>
-          <input type="range" id="ac-dia" min="0.4" max="4.0" step="0.1" value="2.0" oninput="updateAcoustic()">
-        </div>
+<div class="footer">
+  AI Risk Manager · defense-only · synthetic development benchmark ·
+  not a production fraud decisioning system.
+</div>
 
-        <div class="control-group">
-          <div class="control-label"><span>Particle Material:</span></div>
-          <select id="ac-material" onchange="updateAcousticMaterial()">
-            <option value="30">Expanded Polystyrene / Styrofoam (30 kg/m³)</option>
-            <option value="1000" selected>Water Droplet (1000 kg/m³)</option>
-            <option value="950">Polyethylene (950 kg/m³)</option>
-            <option value="2700">Aluminum Particle (2700 kg/m³)</option>
-          </select>
-        </div>
 
-        <div class="control-group">
-          <div class="control-label"><span>Array Gap Distance:</span><span id="ac-gap-val" class="control-val">42.9 mm</span></div>
-          <input type="range" id="ac-gap" min="20" max="80" step="1" value="43" oninput="updateAcoustic()">
-        </div>
+</main>
 
-        <div class="control-group">
-          <div class="control-label"><span>Acoustic Phase Shift (Steering):</span><span id="ac-phase-val" class="control-val">0°</span></div>
-          <input type="range" id="ac-phase" min="-180" max="180" step="5" value="0" oninput="updateAcoustic()">
-        </div>
+</div>
+</div>
 
-        <div class="info-callout">
-          <strong>Gor'kov Potential Wells:</strong> Acoustic radiation force $\mathbf{F} = -\nabla U$ traps dense matter at pressure nodes where velocity gradients generate steep restoring forces.
-        </div>
-      </div>
 
-      <!-- Simulation Display -->
-      <div>
-        <div class="metrics-grid">
-          <div class="metric-card">
-            <div class="metric-title">Wavelength (λ)</div>
-            <div class="metric-value"><span id="ac-lambda-out">8.58</span> <span class="metric-unit">mm</span></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-title">Node Spacing</div>
-            <div class="metric-value"><span id="ac-node-out">4.29</span> <span class="metric-unit">mm</span></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-title">Peak Pressure (P0)</div>
-            <div class="metric-value"><span id="ac-p0-out">2.83</span> <span class="metric-unit">kPa</span></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-title">Radiation Force (Frad)</div>
-            <div class="metric-value"><span id="ac-force-out">184</span> <span class="metric-unit">µN</span></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-title">Max Density Trap</div>
-            <div class="metric-value"><span id="ac-rho-out">4580</span> <span class="metric-unit">kg/m³</span></div>
-          </div>
-        </div>
 
-        <div id="ac-banner" class="banner banner-success">
-          <span id="ac-banner-text">STABLY TRAPPED IN PRESSURE NODE</span>
-          <span id="ac-limit-out">Rayleigh OK (d &lt; 0.2λ)</span>
-        </div>
+<script>
 
-        <div class="canvas-container">
-          <canvas id="acousticCanvas"></canvas>
-        </div>
-      </div>
-    </div>
-  </div>
+/* ============================================================
+   AI RISK MANAGER
+   Self-contained browser demonstration.
 
-  <!-- TAB 4: TRACK B GRAVITATIONAL PHYSICS -->
-  <div id="tab-gravity" class="tab-content">
-    <div class="grid-layout">
-      <!-- Controls -->
-      <div class="card">
-        <div class="card-title">
-          <span>Metric & High-Field Parameters</span>
-          <span class="badge badge-primary">Relativity & QFT</span>
-        </div>
+   This is intentionally defense-only.
 
-        <div class="control-group">
-          <div class="control-label"><span>Casimir Plate Separation:</span><span id="qm-gap-val" class="control-val">10.0 nm</span></div>
-          <input type="range" id="qm-gap" min="1" max="100" step="1" value="10" oninput="updateGravity()">
-        </div>
+   The demo:
+   1. Generates synthetic transaction data.
+   2. Splits it into training and held-out test data.
+   3. Trains a small logistic classifier in-browser.
+   4. Evaluates precision/recall/F1 on the held-out set.
+   5. Allows live transaction scoring.
+   6. Demonstrates threshold/cost optimization.
+============================================================ */
 
-        <div class="control-group">
-          <div class="control-label"><span>Lab Rotor Mass:</span><span id="qm-mass-val" class="control-val">10.0 kg</span></div>
-          <input type="range" id="qm-mass" min="1" max="50" step="1" value="10" oninput="updateGravity()">
-        </div>
 
-        <div class="control-group">
-          <div class="control-label"><span>Rotor Angular Speed:</span><span id="qm-rpm-val" class="control-val">10,000 RPM</span></div>
-          <input type="range" id="qm-rpm" min="1000" max="60000" step="1000" value="10000" oninput="updateGravity()">
-        </div>
+/* ---------------- RANDOM DATA ---------------- */
 
-        <div class="control-group">
-          <div class="control-label"><span>High-Field Laser Power:</span><span id="qm-laser-val" class="control-val">1.0 TW</span></div>
-          <input type="range" id="qm-laser" min="0.1" max="10.0" step="0.1" value="1.0" oninput="updateGravity()">
-        </div>
+let seed = 42;
 
-        <div class="control-group">
-          <div class="control-label"><span>Static B-Field (Gertsenshtein):</span><span id="qm-bfield-val" class="control-val">10.0 T</span></div>
-          <input type="range" id="qm-bfield" min="1" max="25" step="1" value="10" oninput="updateGravity()">
-        </div>
+function random(){
 
-        <div class="info-callout">
-          <strong>Quantum Energy Inequalities (QEI):</strong> Ford-Roman bounds prohibit static macroscopic negative energy concentrations. Any negative pulse is restricted to duration $\Delta t \le d / c$, precluding macroscopic reactionless warp metrics.
-        </div>
-      </div>
+  seed = (seed * 1664525 + 1013904223) >>> 0;
 
-      <!-- Simulation Display -->
-      <div>
-        <div class="metrics-grid">
-          <div class="metric-card">
-            <div class="metric-title">Casimir Energy Density</div>
-            <div class="metric-value"><span id="qm-rho-out">-5.2e2</span> <span class="metric-unit">J/m³</span></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-title">QEI Duration Limit</div>
-            <div class="metric-value"><span id="qm-dt-out">3.3e-17</span> <span class="metric-unit">s</span></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-title">Lab Frame Dragging (Bg)</div>
-            <div class="metric-value"><span id="qm-bg-out">1.1e-26</span> <span class="metric-unit">s⁻¹</span></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-title">Detection Gap</div>
-            <div class="metric-value"><span id="qm-gap-orders">14.0</span> <span class="metric-unit">orders</span></div>
-          </div>
-          <div class="metric-card">
-            <div class="metric-title">GW Converted Power</div>
-            <div class="metric-value"><span id="qm-gw-out">8.3e-29</span> <span class="metric-unit">W</span></div>
-          </div>
-        </div>
+  return seed / 4294967296;
 
-        <div class="banner banner-warning">
-          <span>TRACK B STATUS: Theoretical mechanisms valid; macroscopic coupling severely constrained by QEI and G/c⁴.</span>
-          <span>ALPHA-g: ḡ ≈ 1g</span>
-        </div>
+}
 
-        <div class="canvas-container">
-          <canvas id="gravityCanvas"></canvas>
-        </div>
 
-        <div class="card" style="margin-top: 14px;">
-          <div class="card-title">Breakthrough Physics Feasibility Matrix</div>
-          <div class="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Domain</th>
-                  <th>Core Mechanism</th>
-                  <th>Key Governing Law</th>
-                  <th>Physical Barrier / Current Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><strong>Casimir Metric Shielding</strong></td>
-                  <td>Boundary vacuum negative stress-energy $T_{00} < 0$</td>
-                  <td>$\rho_c = -\frac{\pi^2 \hbar c}{720 d^4}$</td>
-                  <td>Ford-Roman QEI forces $\Delta t \le d/c$; microscopic only</td>
-                </tr>
-                <tr>
-                  <td><strong>Gravitomagnetic Detection</strong></td>
-                  <td>Mass current frame-dragging $\mathbf{B}_g = \nabla \times \mathbf{A}_g$</td>
-                  <td>$B_g \approx \frac{G}{c^2 r^3} J$</td>
-                  <td>14 orders of magnitude below cryogenic laser gyro sensitivity</td>
-                </tr>
-                <tr>
-                  <td><strong>Antimatter Gravity</strong></td>
-                  <td>Equivalence Principle test with antihydrogen</td>
-                  <td>$m_g \stackrel{?}{=} m_i$</td>
-                  <td>CERN ALPHA-g (2023) confirmed $a_g = (0.75 \pm 0.21)g$ downwards</td>
-                </tr>
-                <tr>
-                  <td><strong>Gertsenshtein Effect</strong></td>
-                  <td>EM $\rightarrow$ HFGW resonant cross-coupling</td>
-                  <td>$\eta = \frac{G}{c^4} B_0^2 L^2$</td>
-                  <td>$\frac{G}{c^4} \sim 8.26 \times 10^{-45}$; Terawatt laser yields $<10^{-28}\text{ W}$ GW</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+function normal(){
 
-  <script>
-    // Tab Navigation
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      event.target.classList.add('active');
-      document.getElementById('tab-' + tabId).classList.add('active');
-      if (tabId === 'hts') drawHts();
-      if (tabId === 'ehd') drawEhd();
-      if (tabId === 'acoustic') drawAcoustic();
-      if (tabId === 'gravity') drawGravity();
-    }
+  let u = random() || .5;
+  let v = random() || .5;
 
-    // ==========================================
-    // 1. HIGH-TEMPERATURE SUPERCONDUCTOR (HTS)
-    // ==========================================
-    let htsPerturb = 0;
-    let htsVelocity = 0;
-    const MU_0 = 4.0 * Math.PI * 1e-7;
-    const G_ACC = 9.80665;
+  return Math.sqrt(
+    -2 * Math.log(u)
+  ) * Math.cos(
+    2 * Math.PI * v
+  );
 
-    function resetHtsOscillation() {
-      htsPerturb = 6.0; // Perturb by 6mm
-      htsVelocity = 0;
-    }
+}
 
-    function updateHts() {
-      const mass = parseFloat(document.getElementById('hts-mass').value);
-      const numPucks = parseInt(document.getElementById('hts-pucks').value);
-      const diaMm = parseFloat(document.getElementById('hts-dia').value);
-      const fcGapMm = parseFloat(document.getElementById('hts-fc').value);
-      const b0 = parseFloat(document.getElementById('hts-grade').value);
-      const lambdaMm = parseFloat(document.getElementById('hts-lambda').value);
 
-      document.getElementById('hts-mass-val').innerText = mass.toFixed(1) + ' kg';
-      document.getElementById('hts-pucks-val').innerText = numPucks + ' pucks';
-      document.getElementById('hts-dia-val').innerText = diaMm.toFixed(0) + ' mm';
-      document.getElementById('hts-fc-val').innerText = fcGapMm.toFixed(1) + ' mm';
-      document.getElementById('hts-lambda-val').innerText = lambdaMm.toFixed(0) + ' mm';
+function sigmoid(x){
 
-      const puckArea = Math.PI * Math.pow((diaMm * 1e-3) / 2, 2);
-      const totalArea = puckArea * numPucks;
-      const k = (2.0 * Math.PI) / (lambdaMm * 1e-3);
-      const targetWeightN = mass * G_ACC;
+  x = Math.max(
+    -30,
+    Math.min(30,x)
+  );
 
-      // Solve equilibrium gap z_eq where F_vertical(z) = targetWeightN
-      // F_z(z) = (Area * B0^2 / (2 * mu0)) * (e^(-2kz) - e^(-k(z + z_fc)))
-      let zEqMm = 8.0;
-      for (let zTest = 1.0; zTest <= 35.0; zTest += 0.1) {
-        const zm = zTest * 1e-3;
-        const f = (totalArea * Math.pow(b0, 2) / (2.0 * MU_0)) * (
-          Math.exp(-2.0 * k * zm) - Math.exp(-k * (zm + fcGapMm * 1e-3))
-        );
-        if (f <= targetWeightN) {
-          zEqMm = zTest;
-          break;
-        }
-      }
+  return 1 / (1 + Math.exp(-x));
 
-      // Max capacity at 3mm gap
-      const zmMin = 0.003;
-      const maxF = (totalArea * Math.pow(b0, 2) / (2.0 * MU_0)) * (
-        Math.exp(-2.0 * k * zmMin) - Math.exp(-k * (zmMin + fcGapMm * 1e-3))
+}
+
+
+/* ---------------- DATASET ---------------- */
+
+function generateDataset(size){
+
+  const rows=[];
+
+  for(let i=0;i<size;i++){
+
+    const amount=Math.max(
+      50,
+      Math.min(
+        150000,
+        Math.exp(
+          Math.log(1800)+normal()
+        )
+      )
+    );
+
+    const age=
+      1+
+      Math.floor(
+        random()*1499
       );
-      const maxCapKg = Math.max(0, maxF / G_ACC);
 
-      // Stiffness at equilibrium
-      const zmEq = zEqMm * 1e-3;
-      const fRep = (totalArea * Math.pow(b0, 2) / (2.0 * MU_0)) * Math.exp(-2.0 * k * zmEq);
-      const fPin = (totalArea * Math.pow(b0, 2) / (2.0 * MU_0)) * Math.exp(-k * (zmEq + fcGapMm * 1e-3));
-      const kz = (2.0 * k * fRep - k * fPin) / 1000.0; // N/mm
-      const kx = 0.35 * kz;
+    const velocity=Math.max(
+      0,
+      Math.round(
+        2.2+
+        1.48*normal()
+      )
+    );
 
-      // Thermal budget (closed cycle cooler)
-      const heatLoad = (numPucks * 0.45) + 3.2;
-      const coolerPower = heatLoad / 0.05;
+    const failed=Math.max(
+      0,
+      Math.round(
+        .35+
+        .59*normal()
+      )
+    );
 
-      document.getElementById('hts-gap-out').innerText = zEqMm.toFixed(1);
-      document.getElementById('hts-cap-out').innerText = maxCapKg.toFixed(1);
-      document.getElementById('hts-kz-out').innerText = Math.max(0, kz).toFixed(1);
-      document.getElementById('hts-kx-out').innerText = Math.max(0, kx).toFixed(1);
-      document.getElementById('hts-power-out').innerText = Math.round(coolerPower);
+    const device=
+      random()<.08 ? 1 : 0;
 
-      const banner = document.getElementById('hts-banner');
-      const margin = ((maxCapKg / mass) - 1.0) * 100;
-      if (maxCapKg >= mass) {
-        banner.className = 'banner banner-success';
-        banner.children[0].innerText = 'STABLE EQUILIBRIUM: Restoring flux-pinning force balances payload.';
-        document.getElementById('hts-margin-out').innerText = '+' + margin.toFixed(1) + '% Margin';
-      } else {
-        banner.className = 'banner banner-danger';
-        banner.children[0].innerText = 'INSUFFICIENT LIFT: Payload exceeds magnetic capacity. Add pucks.';
-        document.getElementById('hts-margin-out').innerText = margin.toFixed(1) + '% Deficit';
+    const ip=
+      random()<.06 ? 1 : 0;
+
+    const newDevice=
+      random()<.10 ? 1 : 0;
+
+    const deviation=
+      Math.abs(normal());
+
+
+    /*
+      Synthetic hidden risk-generating process.
+
+      This is only for development/demo purposes.
+    */
+
+    const hiddenRisk=
+      -4.9
+
+      + .25*Math.log1p(amount)
+
+      + .55*Math.log1p(velocity)
+
+      + .65*failed
+
+      + 1.1*device
+
+      + .75*ip
+
+      + .65*newDevice
+
+      + .55*deviation
+
+      - .0012*Math.min(
+        age,
+        1000
+      );
+
+
+    const probability=
+      sigmoid(hiddenRisk);
+
+
+    const fraud=
+      random()<probability
+      ? 1
+      : 0;
+
+
+    rows.push({
+
+      amount,
+
+      age,
+
+      velocity,
+
+      failed,
+
+      device,
+
+      ip,
+
+      newDevice,
+
+      deviation,
+
+      fraud
+
+    });
+
+  }
+
+  return rows;
+
+}
+
+
+/* ---------------- FEATURES ---------------- */
+
+function featureVector(x){
+
+  return [
+
+    Math.log1p(
+      Math.max(
+        0,
+        x.amount
+      )
+    )/10,
+
+    Math.min(
+      x.age,
+      1000
+    )/1000,
+
+    Math.min(
+      x.velocity,
+      30
+    )/30,
+
+    Math.min(
+      x.failed,
+      10
+    )/10,
+
+    x.device,
+
+    x.ip,
+
+    x.newDevice,
+
+    Math.min(
+      x.deviation,
+      6
+    )/6
+
+  ];
+
+}
+
+
+/* ---------------- MODEL TRAINING ---------------- */
+
+function trainModel(rows){
+
+  const dimensions=8;
+
+  const weights=
+    new Array(dimensions)
+      .fill(0);
+
+  let bias=0;
+
+  const learningRate=.08;
+
+  /*
+    Lightweight class-weighted logistic regression.
+  */
+
+  for(let epoch=0;epoch<120;epoch++){
+
+    const gradients=
+      new Array(dimensions)
+        .fill(0);
+
+    let biasGradient=0;
+
+
+    for(const row of rows){
+
+      const x=
+        featureVector(row);
+
+
+      const z=
+        bias+
+        weights.reduce(
+          (sum,w,index)=>
+            sum+w*x[index],
+          0
+        );
+
+
+      const prediction=
+        sigmoid(z);
+
+
+      const weight=
+        row.fraud
+        ? 2.2
+        : .6;
+
+
+      const error=
+        (prediction-row.fraud)*
+        weight;
+
+
+      for(
+        let j=0;
+        j<dimensions;
+        j++
+      ){
+
+        gradients[j]+=
+          error*x[j];
+
       }
+
+      biasGradient+=error;
+
     }
 
-    function drawHts() {
-      const canvas = document.getElementById('htsCanvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      const w = canvas.width = canvas.parentElement.clientWidth;
-      const h = canvas.height = 380;
 
-      // Physics update for oscillation
-      const kz = parseFloat(document.getElementById('hts-kz-out').innerText) * 1000; // N/m
-      const mass = parseFloat(document.getElementById('hts-mass').value);
-      const dt = 0.016;
-      const damping = 3.5;
-      const accel = (-kz * (htsPerturb * 1e-3) - damping * htsVelocity) / mass;
-      htsVelocity += accel * dt;
-      htsPerturb += (htsVelocity * dt) * 1e3;
+    for(
+      let j=0;
+      j<dimensions;
+      j++
+    ){
 
-      ctx.clearRect(0, 0, w, h);
+      weights[j]-=
+        learningRate*
+        gradients[j]/
+        rows.length;
 
-      // Track parameters
-      const trackY = h - 70;
-      const magnetWidth = 50;
-      const numMagnets = Math.ceil(w / magnetWidth) + 1;
-      const eqGap = parseFloat(document.getElementById('hts-gap-out').innerText);
-      const currentGapPx = (eqGap + htsPerturb) * 4.0;
-
-      // 1. Draw Halbach Array Track
-      const orientations = ['↑', '→', '↓', '←'];
-      for (let i = 0; i < numMagnets; i++) {
-        const mx = i * magnetWidth;
-        const orient = orientations[i % 4];
-        ctx.fillStyle = (i % 2 === 0) ? '#1e293b' : '#334155';
-        ctx.fillRect(mx, trackY, magnetWidth - 2, 50);
-        ctx.strokeStyle = '#475569';
-        ctx.strokeRect(mx, trackY, magnetWidth - 2, 50);
-
-        ctx.fillStyle = '#38bdf8';
-        ctx.font = 'bold 16px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(orient, mx + magnetWidth / 2 - 1, trackY + 32);
-      }
-
-      // 2. Draw Magnetic Flux Lines (Halbach upward concentration)
-      ctx.save();
-      ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
-      ctx.lineWidth = 1.5;
-      for (let x = 20; x < w; x += 40) {
-        ctx.beginPath();
-        const archHeight = Math.min(110, Math.sin((x / w) * Math.PI * 4) * 40 + 70);
-        ctx.moveTo(x, trackY);
-        ctx.bezierCurveTo(x + 10, trackY - archHeight, x + 30, trackY - archHeight, x + 40, trackY);
-        ctx.stroke();
-      }
-      ctx.restore();
-
-      // 3. Draw Levitating Superconducting Cryostat & Pucks
-      const puckWidth = Math.min(260, w * 0.5);
-      const puckX = (w - puckWidth) / 2;
-      const puckY = trackY - currentGapPx - 30;
-
-      // Cryostat outer cold plate
-      ctx.fillStyle = 'rgba(30, 41, 59, 0.9)';
-      ctx.strokeStyle = '#38bdf8';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.roundRect(puckX, puckY, puckWidth, 30, 6);
-      ctx.fill();
-      ctx.stroke();
-
-      // Pinned YBCO Pucks (Glow & Vortices)
-      const numP = Math.min(8, parseInt(document.getElementById('hts-pucks').value));
-      const pSpacing = puckWidth / (numP + 1);
-      for (let p = 1; p <= numP; p++) {
-        const px = puckX + p * pSpacing;
-        const py = puckY + 15;
-        // Glow
-        const grad = ctx.createRadialGradient(px, py, 2, px, py, 14);
-        grad.addColorStop(0, '#818cf8');
-        grad.addColorStop(1, 'rgba(129, 140, 248, 0)');
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.arc(px, py, 14, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Core
-        ctx.fillStyle = '#a855f7';
-        ctx.beginPath();
-        ctx.arc(px, py, 5, 0, Math.PI * 2);
-        ctx.fill();
-      }
-
-      // Suspension Gap Dimension Arrow
-      ctx.strokeStyle = '#10b981';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(puckX - 25, trackY);
-      ctx.lineTo(puckX - 25, puckY + 30);
-      ctx.stroke();
-
-      ctx.fillStyle = '#10b981';
-      ctx.font = '11px monospace';
-      ctx.textAlign = 'right';
-      ctx.fillText(`Gap: ${(eqGap + htsPerturb).toFixed(1)} mm`, puckX - 32, (trackY + puckY + 30) / 2 + 4);
-
-      // Superconducting vapor plume (LN2 effect)
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
-      ctx.beginPath();
-      ctx.ellipse(w / 2, puckY + 15, puckWidth / 2 + 15, 12, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      requestAnimationFrame(drawHts);
     }
 
-    // ==========================================
-    // 2. ELECTROHYDRODYNAMIC (EHD) THRUST
-    // ==========================================
-    let ehdParticles = [];
-    for (let i = 0; i < 60; i++) {
-      ehdParticles.push({
-        x: Math.random(),
-        y: Math.random(),
-        speed: 0.02 + Math.random() * 0.04
-      });
+
+    bias-=
+      learningRate*
+      biasGradient/
+      rows.length;
+
+  }
+
+
+  return {
+
+    weights,
+
+    bias
+
+  };
+
+}
+
+
+/* ---------------- MODEL PROBABILITY ---------------- */
+
+function modelProbability(
+  row,
+  model
+){
+
+  const x=
+    featureVector(row);
+
+
+  const score=
+    model.bias+
+    model.weights.reduce(
+      (sum,w,index)=>
+        sum+w*x[index],
+      0
+    );
+
+
+  return sigmoid(score);
+
+}
+
+
+/* ---------------- METRICS ---------------- */
+
+function calculateMetrics(
+  rows,
+  model,
+  threshold
+){
+
+  let tp=0;
+  let tn=0;
+  let fp=0;
+  let fn=0;
+
+
+  for(const row of rows){
+
+    const prediction=
+      modelProbability(
+        row,
+        model
+      ) >= threshold
+      ? 1
+      : 0;
+
+
+    if(
+      prediction===1 &&
+      row.fraud===1
+    ){
+      tp++;
     }
 
-    function updateEhd() {
-      const vKv = parseFloat(document.getElementById('ehd-volt').value);
-      const gapMm = parseFloat(document.getElementById('ehd-gap').value);
-      const radiusUm = parseFloat(document.getElementById('ehd-radius').value);
-      const wireLen = parseFloat(document.getElementById('ehd-len').value);
-      const frameMassG = parseFloat(document.getElementById('ehd-mass').value);
-      const specPower = parseFloat(document.getElementById('ehd-sp').value);
-
-      document.getElementById('ehd-volt-val').innerText = vKv.toFixed(1) + ' kV';
-      document.getElementById('ehd-gap-val').innerText = gapMm.toFixed(1) + ' mm';
-      document.getElementById('ehd-radius-val').innerText = radiusUm.toFixed(1) + ' µm';
-      document.getElementById('ehd-len-val').innerText = wireLen.toFixed(1) + ' m';
-      document.getElementById('ehd-mass-val').innerText = frameMassG.toFixed(1) + ' g';
-      document.getElementById('ehd-sp-val').innerText = specPower.toFixed(0) + ' W/kg';
-
-      const rw = radiusUm * 1e-6;
-      const d = gapMm * 1e-3;
-      const v = vKv * 1e3;
-      const rwCm = rw * 100.0;
-      const ecVcm = 3.1e4 * 0.9 * (1.0 + 0.308 / Math.sqrt(rwCm));
-      const ec = ecVcm * 100.0;
-      const v0 = ec * rw * Math.log(2.0 * d / rw);
-
-      document.getElementById('ehd-v0-out').innerText = (v0 / 1e3).toFixed(1);
-
-      let currentA = 0;
-      let powerW = 0;
-      let thrustGf = 0;
-
-      if (v > v0) {
-        const mu = 2.0e-4;
-        const eps0 = 8.854e-12;
-        currentA = 2.2 * mu * eps0 * (wireLen / Math.pow(d, 2)) * v * (v - v0);
-        powerW = v * currentA;
-        const thrustN = (currentA * d) / mu;
-        thrustGf = (thrustN / G_ACC) * 1000.0;
-      }
-
-      // Mass calculations for untethered system
-      const converterMassG = (powerW / specPower) * 1000.0;
-      const batteryEnergyWh = powerW * (3.0 / 60.0); // 3 min flight
-      const batteryMassG = (batteryEnergyWh / 180.0) * 1000.0;
-      const totalAllUpMassG = frameMassG + converterMassG + batteryMassG;
-      const twr = totalAllUpMassG > 0 ? (thrustGf / totalAllUpMassG) : 0;
-      const netLiftGf = thrustGf - totalAllUpMassG;
-
-      document.getElementById('ehd-thrust-out').innerText = thrustGf.toFixed(1);
-      document.getElementById('ehd-pwr-out').innerText = powerW.toFixed(1);
-      document.getElementById('ehd-allup-out').innerText = totalAllUpMassG.toFixed(1);
-      document.getElementById('ehd-twr-out').innerText = twr.toFixed(2);
-
-      const banner = document.getElementById('ehd-banner');
-      if (twr >= 1.0) {
-        banner.className = 'banner banner-success';
-        document.getElementById('ehd-banner-text').innerText = 'UNTETHERED FLIGHT VIABLE (TWR ≥ 1.0)';
-        document.getElementById('ehd-netlift-out').innerText = '+' + netLiftGf.toFixed(1) + ' gf Net Lift';
-      } else {
-        banner.className = 'banner banner-danger';
-        document.getElementById('ehd-banner-text').innerText = 'INSUFFICIENT THRUST FOR UNTETHERED FLIGHT (TWR < 1.0)';
-        document.getElementById('ehd-netlift-out').innerText = netLiftGf.toFixed(1) + ' gf Deficit';
-      }
+    else if(
+      prediction===0 &&
+      row.fraud===0
+    ){
+      tn++;
     }
 
-    function drawEhd() {
-      const canvas = document.getElementById('ehdCanvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      const w = canvas.width = canvas.parentElement.clientWidth;
-      const h = canvas.height = 380;
+    else if(
+      prediction===1 &&
+      row.fraud===0
+    ){
+      fp++;
+    }
 
-      ctx.clearRect(0, 0, w, h);
+    else{
+      fn++;
+    }
 
-      const gapMm = parseFloat(document.getElementById('ehd-gap').value);
-      const vKv = parseFloat(document.getElementById('ehd-volt').value);
-      const v0Kv = parseFloat(document.getElementById('ehd-v0-out').innerText);
-      const isIonizing = vKv > v0Kv;
+  }
 
-      const topWireY = 70;
-      const gapPx = Math.min(220, gapMm * 3.5);
-      const bottomFoilY = topWireY + gapPx;
 
-      // 1. Draw Anode Corona Wire
-      ctx.strokeStyle = '#f59e0b';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      ctx.moveTo(40, topWireY);
-      ctx.lineTo(w - 40, topWireY);
-      ctx.stroke();
+  const precision=
+    tp/(tp+fp)||0;
 
-      ctx.fillStyle = '#f59e0b';
-      ctx.font = '11px monospace';
-      ctx.fillText(`ANODE CORONA WIRE (+${vKv.toFixed(1)} kV)`, 40, topWireY - 12);
 
-      // Corona Glow around wire
-      if (isIonizing) {
-        const glow = ctx.createLinearGradient(0, topWireY - 15, 0, topWireY + 15);
-        glow.addColorStop(0, 'rgba(168, 85, 247, 0)');
-        glow.addColorStop(0.5, 'rgba(168, 85, 247, 0.7)');
-        glow.addColorStop(1, 'rgba(168, 85, 247, 0)');
-        ctx.fillStyle = glow;
-        ctx.fillRect(40, topWireY - 15, w - 80, 30);
-      }
+  const recall=
+    tp/(tp+fn)||0;
 
-      // 2. Draw Cathode Collector Aerofoil/Foil
-      ctx.fillStyle = '#475569';
-      ctx.strokeStyle = '#94a3b8';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.roundRect(40, bottomFoilY, w - 80, 24, 6);
-      ctx.fill();
-      ctx.stroke();
 
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '11px monospace';
-      ctx.fillText('CATHODE COLLECTOR FOIL (GROUND)', 40, bottomFoilY + 40);
+  const f1=
+    2*precision*recall/
+    (precision+recall)||0;
 
-      // 3. Draw Ion Drift & Electric Wind Particles
-      if (isIonizing) {
-        ctx.fillStyle = '#38bdf8';
-        ehdParticles.forEach(p => {
-          p.y += p.speed;
-          if (p.y > 1.0) {
-            p.y = 0;
-            p.x = Math.random();
-          }
-          const px = 50 + p.x * (w - 100);
-          const py = topWireY + p.y * gapPx;
-          ctx.beginPath();
-          ctx.arc(px, py, 2.5, 0, Math.PI * 2);
-          ctx.fill();
-        });
 
-        // Air momentum arrows (Electric Wind)
-        ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
-        ctx.lineWidth = 1.5;
-        for (let ax = 80; ax < w - 60; ax += 80) {
-          ctx.beginPath();
-          ctx.moveTo(ax, bottomFoilY + 50);
-          ctx.lineTo(ax, bottomFoilY + 85);
-          ctx.lineTo(ax - 4, bottomFoilY + 77);
-          ctx.moveTo(ax, bottomFoilY + 85);
-          ctx.lineTo(ax + 4, bottomFoilY + 77);
-          ctx.stroke();
+  const fpr=
+    fp/(fp+tn)||0;
+
+
+  return{
+
+    tp,
+    tn,
+    fp,
+    fn,
+
+    precision,
+    recall,
+    f1,
+    fpr,
+
+    size:rows.length
+
+  };
+
+}
+
+
+/* ---------------- STATE ---------------- */
+
+const state={
+
+  training:[],
+  test:[],
+
+  model:null,
+
+  metrics:null,
+
+  audit:[]
+
+};
+
+
+/* ---------------- INIT ---------------- */
+
+function initialize(){
+
+  const dataset=
+    generateDataset(8000);
+
+
+  const split=
+    Math.floor(
+      dataset.length*.8
+    );
+
+
+  state.training=
+    dataset.slice(
+      0,
+      split
+    );
+
+
+  state.test=
+    dataset.slice(
+      split
+    );
+
+
+  state.model=
+    trainModel(
+      state.training
+    );
+
+
+  state.metrics=
+    calculateMetrics(
+      state.test,
+      state.model,
+      .5
+    );
+
+
+  renderDashboard();
+
+  renderTransactions();
+
+  updateCost();
+
+}
+
+
+/* ---------------- DASHBOARD ---------------- */
+
+function percent(value){
+
+  return(
+    value*100
+  ).toFixed(1)+"%";
+
+}
+
+
+function renderDashboard(){
+
+  const m=
+    state.metrics;
+
+
+  document.getElementById(
+    "kPrecision"
+  ).textContent=
+    percent(m.precision);
+
+
+  document.getElementById(
+    "kRecall"
+  ).textContent=
+    percent(m.recall);
+
+
+  document.getElementById(
+    "kF1"
+  ).textContent=
+    percent(m.f1);
+
+
+  document.getElementById(
+    "kTest"
+  ).textContent=
+    m.size.toLocaleString();
+
+
+  document.getElementById(
+    "evalPrecision"
+  ).textContent=
+    percent(m.precision);
+
+
+  document.getElementById(
+    "evalRecall"
+  ).textContent=
+    percent(m.recall);
+
+
+  document.getElementById(
+    "evalF1"
+  ).textContent=
+    percent(m.f1);
+
+
+  document.getElementById(
+    "evalFPR"
+  ).textContent=
+    percent(m.fpr);
+
+
+  document.getElementById(
+    "evalRows"
+  ).textContent=
+    m.size.toLocaleString();
+
+
+  document.getElementById(
+    "tn"
+  ).textContent=
+    m.tn.toLocaleString();
+
+
+  document.getElementById(
+    "fp"
+  ).textContent=
+    m.fp.toLocaleString();
+
+
+  document.getElementById(
+    "fn"
+  ).textContent=
+    m.fn.toLocaleString();
+
+
+  document.getElementById(
+    "tp"
+  ).textContent=
+    m.tp.toLocaleString();
+
+
+  renderDistribution();
+
+}
+
+
+/* ---------------- DISTRIBUTION ---------------- */
+
+function renderDistribution(){
+
+  let low=0;
+  let medium=0;
+  let high=0;
+
+
+  for(
+    const row of state.test
+  ){
+
+    const score=
+      modelProbability(
+        row,
+        state.model
+      );
+
+
+    if(score<.35){
+
+      low++;
+
+    }
+
+    else if(score<.70){
+
+      medium++;
+
+    }
+
+    else{
+
+      high++;
+
+    }
+
+  }
+
+
+  const total=
+    state.test.length;
+
+
+  const lowPct=
+    low/total*100;
+
+  const mediumPct=
+    medium/total*100;
+
+  const highPct=
+    high/total*100;
+
+
+  document.getElementById(
+    "distLow"
+  ).textContent=
+    low.toLocaleString();
+
+
+  document.getElementById(
+    "distMedium"
+  ).textContent=
+    medium.toLocaleString();
+
+
+  document.getElementById(
+    "distHigh"
+  ).textContent=
+    high.toLocaleString();
+
+
+  document.getElementById(
+    "barLow"
+  ).style.width=
+    lowPct+"%";
+
+
+  document.getElementById(
+    "barMedium"
+  ).style.width=
+    mediumPct+"%";
+
+
+  document.getElementById(
+    "barHigh"
+  ).style.width=
+    highPct+"%";
+
+
+  document.getElementById(
+    "pctLow"
+  ).textContent=
+    lowPct.toFixed(1)+"%";
+
+
+  document.getElementById(
+    "pctMedium"
+  ).textContent=
+    mediumPct.toFixed(1)+"%";
+
+
+  document.getElementById(
+    "pctHigh"
+  ).textContent=
+    highPct.toFixed(1)+"%";
+
+}
+
+
+/* ---------------- TRANSACTIONS ---------------- */
+
+function renderTransactions(){
+
+  const body=
+    document.getElementById(
+      "transactionTable"
+    );
+
+
+  body.innerHTML=
+    state.test
+      .slice(0,12)
+      .map(
+        (row,index)=>{
+
+          const score=
+            Math.round(
+              modelProbability(
+                row,
+                state.model
+              )*100
+            );
+
+
+          const level=
+            score>=70
+            ? "HIGH"
+            : score>=35
+            ? "MEDIUM"
+            : "LOW";
+
+
+          const badge=
+            level==="HIGH"
+            ? "red"
+            : level==="MEDIUM"
+            ? "yellow"
+            : "green";
+
+
+          return `
+
+          <tr>
+
+            <td>
+              TXN-${10482-index}
+            </td>
+
+            <td>
+              ₹${Math.round(
+                row.amount
+              ).toLocaleString("en-IN")}
+            </td>
+
+            <td>
+              ${row.age} days
+            </td>
+
+            <td>
+              ${row.velocity}
+            </td>
+
+            <td>
+              ${row.newDevice
+                ? "NEW"
+                : "KNOWN"}
+            </td>
+
+            <td>
+              <span class="badge ${badge}">
+                ${score}/100
+              </span>
+            </td>
+
+            <td>
+              ${
+                level==="LOW"
+                ? "APPROVE"
+                : "REVIEW"
+              }
+            </td>
+
+          </tr>
+
+          `;
+
         }
-        ctx.fillStyle = '#38bdf8';
-        ctx.fillText('IONIC DRIFT & ELECTRIC WIND MOMENTUM (↓)', w / 2 - 110, bottomFoilY + 98);
-      } else {
-        ctx.fillStyle = '#ef4444';
-        ctx.font = '13px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('VOLTAGE BELOW CORONA ONSET (V < V0) - NO IONIZATION', w / 2, (topWireY + bottomFoilY) / 2);
-        ctx.textAlign = 'left';
+      )
+      .join("");
+
+}
+
+
+/* ---------------- FORM ---------------- */
+
+function readForm(){
+
+  return{
+
+    amount:
+      Number(
+        document.getElementById(
+          "amount"
+        ).value
+      ),
+
+    age:
+      Number(
+        document.getElementById(
+          "accountAge"
+        ).value
+      ),
+
+    velocity:
+      Number(
+        document.getElementById(
+          "velocity"
+        ).value
+      ),
+
+    failed:
+      Number(
+        document.getElementById(
+          "failed"
+        ).value
+      ),
+
+    device:
+      Number(
+        document.getElementById(
+          "device"
+        ).value
+      ) ? 1 : 0,
+
+    ip:
+      Number(
+        document.getElementById(
+          "ip"
+        ).value
+      ) ? 1 : 0,
+
+    newDevice:
+      Number(
+        document.getElementById(
+          "newDevice"
+        ).value
+      ) ? 1 : 0,
+
+    deviation:
+      Number(
+        document.getElementById(
+          "deviation"
+        ).value
+      )
+
+  };
+
+}
+
+
+/* ---------------- REASONS ---------------- */
+
+function getReasons(x){
+
+  const reasons=[];
+
+
+  if(x.velocity>=8){
+
+    reasons.push(
+      "Unusually high transaction velocity"
+    );
+
+  }
+
+
+  if(x.age<=7){
+
+    reasons.push(
+      "Very new account"
+    );
+
+  }
+
+
+  if(x.failed>=3){
+
+    reasons.push(
+      "Multiple recent failed transactions"
+    );
+
+  }
+
+
+  if(x.device){
+
+    reasons.push(
+      "Recent device change"
+    );
+
+  }
+
+
+  if(x.ip){
+
+    reasons.push(
+      "Recent IP change"
+    );
+
+  }
+
+
+  if(x.newDevice){
+
+    reasons.push(
+      "New device signal"
+    );
+
+  }
+
+
+  if(x.deviation>=2){
+
+    reasons.push(
+      "Transaction amount deviates from baseline"
+    );
+
+  }
+
+
+  if(x.amount>=10000){
+
+    reasons.push(
+      "Large transaction amount"
+    );
+
+  }
+
+
+  if(!reasons.length){
+
+    reasons.push(
+      "No major high-risk rule signals detected"
+    );
+
+  }
+
+
+  return reasons;
+
+}
+
+
+/* ---------------- ANALYZE ---------------- */
+
+function analyze(){
+
+  const x=
+    readForm();
+
+
+  const probability=
+    modelProbability(
+      x,
+      state.model
+    );
+
+
+  const score=
+    Math.round(
+      probability*100
+    );
+
+
+  const level=
+    score>=70
+    ? "HIGH"
+    : score>=35
+    ? "MEDIUM"
+    : "LOW";
+
+
+  const decision=
+    level==="LOW"
+    ? "APPROVE"
+    : "REVIEW";
+
+
+  const reasons=
+    getReasons(x);
+
+
+  const badge=
+    level==="HIGH"
+    ? "red"
+    : level==="MEDIUM"
+    ? "yellow"
+    : "green";
+
+
+  document.getElementById(
+    "result"
+  ).innerHTML=`
+
+    <div class="muted">
+      FRAUD PROBABILITY
+    </div>
+
+    <div class="big-score">
+      ${score}
+      <small>/100</small>
+    </div>
+
+    <div class="decision">
+      <span class="badge ${badge}">
+        ${level} RISK · ${decision}
+      </span>
+    </div>
+
+    <div
+      style="
+        margin-top:14px;
+        color:#8ca3bb;
+        font-size:10px
+      "
+    >
+      Model probability:
+      ${(probability*100).toFixed(2)}%
+    </div>
+
+    <div style="margin-top:13px">
+
+      ${
+
+        reasons
+          .map(
+            reason=>
+              `<div class="reason">
+                • ${reason}
+              </div>`
+          )
+          .join("")
+
       }
 
-      requestAnimationFrame(drawEhd);
-    }
+    </div>
 
-    // ==========================================
-    // 3. ACOUSTIC LEVITATION
-    // ==========================================
-    let acousticParticleY = 0;
-    function updateAcousticMaterial() {
-      updateAcoustic();
-    }
+    <div class="callout" style="margin-top:13px">
 
-    function updateAcoustic() {
-      const spl = parseFloat(document.getElementById('ac-spl').value);
-      const diaMm = parseFloat(document.getElementById('ac-dia').value);
-      const rhoP = parseFloat(document.getElementById('ac-material').value);
-      const gapMm = parseFloat(document.getElementById('ac-gap').value);
-      const phaseDeg = parseFloat(document.getElementById('ac-phase').value);
+      <b>
+        Recommended action
+      </b>
 
-      document.getElementById('ac-spl-val').innerText = spl.toFixed(1) + ' dB';
-      document.getElementById('ac-dia-val').innerText = diaMm.toFixed(1) + ' mm';
-      document.getElementById('ac-gap-val').innerText = gapMm.toFixed(1) + ' mm';
-      document.getElementById('ac-phase-val').innerText = phaseDeg.toFixed(0) + '°';
-
-      const c0 = 343.2;
-      const f = 40000.0;
-      const lambda = c0 / f; // ~0.00858 m
-      const k = (2.0 * Math.PI) / lambda;
-      const r = (diaMm * 1e-3) / 2.0;
-
-      // P_rms = 20e-6 * 10^(SPL / 20)
-      const pRms = 20e-6 * Math.pow(10, spl / 20.0);
-      const p0 = pRms * Math.SQRT2;
-
-      // Max trap density: rho_max = (5 * P0^2 * k) / (8 * rho0 * c0^2 * g)
-      const rho0 = 1.204;
-      const rhoMax = (5.0 * Math.pow(p0, 2) * k) / (8.0 * rho0 * Math.pow(c0, 2) * G_ACC);
-
-      // Primary radiation force amplitude
-      const fRadMax = (5.0 * Math.PI * Math.pow(p0, 2) * Math.pow(r, 3) * k) / (6.0 * rho0 * Math.pow(c0, 2));
-
-      // Particle weight
-      const vol = (4.0 / 3.0) * Math.PI * Math.pow(r, 3);
-      const weightN = vol * rhoP * G_ACC;
-
-      document.getElementById('ac-p0-out').innerText = (p0 / 1e3).toFixed(2);
-      document.getElementById('ac-force-out').innerText = (fRadMax * 1e6).toFixed(0);
-      document.getElementById('ac-rho-out').innerText = Math.round(rhoMax);
-
-      const banner = document.getElementById('ac-banner');
-      const isTrappable = fRadMax > weightN && diaMm < (lambda * 1e3 * 0.25);
-
-      if (isTrappable) {
-        banner.className = 'banner banner-success';
-        document.getElementById('ac-banner-text').innerText = 'STABLY TRAPPED IN PRESSURE NODE';
-        document.getElementById('ac-limit-out').innerText = `Frad (${(fRadMax*1e6).toFixed(0)} µN) > Weight (${(weightN*1e6).toFixed(0)} µN)`;
-      } else if (diaMm >= (lambda * 1e3 * 0.25)) {
-        banner.className = 'banner banner-danger';
-        document.getElementById('ac-banner-text').innerText = 'NON-RAYLEIGH INSTABILITY: Particle diameter exceeds λ/4 limit.';
-        document.getElementById('ac-limit-out').innerText = 'Scatter Torques Destabilize';
-      } else {
-        banner.className = 'banner banner-danger';
-        document.getElementById('ac-banner-text').innerText = 'INSUFFICIENT ACOUSTIC INTENSITY: Particle falls under gravity.';
-        document.getElementById('ac-limit-out').innerText = `Deficit: ${(weightN*1e6).toFixed(0)} µN`;
-      }
-    }
-
-    function drawAcoustic() {
-      const canvas = document.getElementById('acousticCanvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      const w = canvas.width = canvas.parentElement.clientWidth;
-      const h = canvas.height = 380;
-
-      ctx.clearRect(0, 0, w, h);
-
-      const phaseDeg = parseFloat(document.getElementById('ac-phase').value);
-      const phaseRad = (phaseDeg * Math.PI) / 180.0;
-      const diaMm = parseFloat(document.getElementById('ac-dia').value);
-
-      const topTransY = 50;
-      const botTransY = h - 50;
-      const activeH = botTransY - topTransY;
-
-      // 1. Draw Standing Wave Pressure Field Background
-      const numBands = 8;
-      for (let y = topTransY; y < botTransY; y += 3) {
-        const ny = (y - topTransY) / activeH;
-        // Standing wave spatial distribution with phase shift
-        const pressureMag = Math.abs(Math.cos(ny * Math.PI * 6 + phaseRad));
-        ctx.fillStyle = `rgba(56, 189, 248, ${pressureMag * 0.35})`;
-        ctx.fillRect(80, y, w - 160, 3);
-      }
-
-      // Transducer top array
-      ctx.fillStyle = '#1e293b';
-      ctx.strokeStyle = '#38bdf8';
-      ctx.lineWidth = 2;
-      ctx.fillRect(80, topTransY - 20, w - 160, 20);
-      ctx.strokeRect(80, topTransY - 20, w - 160, 20);
-
-      // Transducer bottom array
-      ctx.fillRect(80, botTransY, w - 160, 20);
-      ctx.strokeRect(80, botTransY, w - 160, 20);
-
-      ctx.fillStyle = '#38bdf8';
-      ctx.font = '11px monospace';
-      ctx.fillText('TOP TRANSDUCER ARRAY (40 kHz)', 90, topTransY - 6);
-      ctx.fillText('BOTTOM TRANSDUCER ARRAY (40 kHz)', 90, botTransY + 15);
-
-      // 2. Draw Trapped Particles in Pressure Nodes
-      const nodeYs = [
-        topTransY + activeH * (1 / 6) + (phaseDeg / 180) * 15,
-        topTransY + activeH * (3 / 6) + (phaseDeg / 180) * 15,
-        topTransY + activeH * (5 / 6) + (phaseDeg / 180) * 15
-      ];
-
-      const pRadiusPx = Math.max(3, diaMm * 3.5);
-      nodeYs.forEach((ny, idx) => {
-        if (ny > topTransY + 15 && ny < botTransY - 15) {
-          // Glow
-          const grad = ctx.createRadialGradient(w / 2, ny, 2, w / 2, ny, pRadiusPx * 2.5);
-          grad.addColorStop(0, '#10b981');
-          grad.addColorStop(1, 'rgba(16, 185, 129, 0)');
-          ctx.fillStyle = grad;
-          ctx.beginPath();
-          ctx.arc(w / 2, ny, pRadiusPx * 2.5, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Particle
-          ctx.fillStyle = '#34d399';
-          ctx.beginPath();
-          ctx.arc(w / 2, ny, pRadiusPx, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.fillStyle = '#cbd5e1';
-          ctx.font = '10px monospace';
-          ctx.fillText(`Node ${idx + 1}`, w / 2 + pRadiusPx + 8, ny + 3);
+      <p>
+        ${
+          decision==="APPROVE"
+          ? "Transaction can proceed under the current demo policy."
+          : "Route transaction to merchant review under the current demo policy."
         }
-      });
+      </p>
 
-      requestAnimationFrame(drawAcoustic);
+    </div>
+
+  `;
+
+
+  state.audit.unshift({
+
+    id:
+      "TXN-"+Math.floor(
+        10000+
+        random()*89999
+      ),
+
+    score,
+
+    level,
+
+    decision,
+
+    reasons,
+
+    time:
+      new Date().toLocaleTimeString()
+
+  });
+
+
+  if(
+    state.audit.length>50
+  ){
+
+    state.audit.pop();
+
+  }
+
+
+  document.getElementById(
+    "kEvents"
+  ).textContent=
+    state.audit.length;
+
+
+  renderAudit();
+
+}
+
+
+/* ---------------- SCENARIOS ---------------- */
+
+function scenario(type){
+
+  const scenarios={
+
+    normal:[
+      1200,
+      480,
+      1,
+      0,
+      0,
+      0,
+      0,
+      .3
+    ],
+
+    velocity:[
+      8450,
+      2,
+      17,
+      4,
+      1,
+      1,
+      1,
+      2.5
+    ],
+
+    device:[
+      3200,
+      5,
+      5,
+      1,
+      1,
+      0,
+      1,
+      1.1
+    ],
+
+    amount:[
+      28000,
+      180,
+      2,
+      0,
+      0,
+      0,
+      0,
+      5.2
+    ]
+
+  };
+
+
+  const values=
+    scenarios[type];
+
+
+  const ids=[
+
+    "amount",
+    "accountAge",
+    "velocity",
+    "failed",
+    "device",
+    "ip",
+    "newDevice",
+    "deviation"
+
+  ];
+
+
+  ids.forEach(
+    (id,index)=>{
+
+      document.getElementById(
+        id
+      ).value=
+        values[index];
+
     }
+  );
 
-    // ==========================================
-    // 4. BREAKTHROUGH GRAVITATIONAL PHYSICS
-    // ==========================================
-    function updateGravity() {
-      const gapNm = parseFloat(document.getElementById('qm-gap').value);
-      const rotorM = parseFloat(document.getElementById('qm-mass').value);
-      const rotorRpm = parseFloat(document.getElementById('qm-rpm').value);
-      const laserTw = parseFloat(document.getElementById('qm-laser').value);
-      const bFieldT = parseFloat(document.getElementById('qm-bfield').value);
 
-      document.getElementById('qm-gap-val').innerText = gapNm.toFixed(1) + ' nm';
-      document.getElementById('qm-mass-val').innerText = rotorM.toFixed(1) + ' kg';
-      document.getElementById('qm-rpm-val').innerText = rotorRpm.toLocaleString() + ' RPM';
-      document.getElementById('qm-laser-val').innerText = laserTw.toFixed(1) + ' TW';
-      document.getElementById('qm-bfield-val').innerText = bFieldT.toFixed(1) + ' T';
+  go("risk");
 
-      const hbar = 1.05457e-34;
-      const c = 2.99792e8;
-      const gNewton = 6.6743e-11;
+  analyze();
 
-      // Casimir energy density: rho_c = -(pi^2 * hbar * c) / (720 * d^4)
-      const d = gapNm * 1e-9;
-      const rhoC = -(Math.PI * Math.PI * hbar * c) / (720.0 * Math.pow(d, 4));
-      const dtBound = d / c;
+}
 
-      // Gravitomagnetic field: Bg ~ (G / c^2) * (J / r^3)
-      const omega = (rotorRpm * 2.0 * Math.PI) / 60.0;
-      const rRotor = 0.10;
-      const J = 0.5 * rotorM * Math.pow(rRotor, 2) * omega;
-      const dist = 0.15;
-      const bg = (gNewton / Math.pow(c, 2)) * (J / Math.pow(dist, 3));
-      const gapOrders = Math.log10(1e-12 / bg);
 
-      // Gertsenshtein effect: eta = (G / c^4) * B0^2 * L^2
-      const L = 10.0;
-      const eta = (gNewton / Math.pow(c, 4)) * Math.pow(bFieldT, 2) * Math.pow(L, 2);
-      const gwPower = (laserTw * 1e12) * eta;
+/* ---------------- COST OPTIMIZER ---------------- */
 
-      document.getElementById('qm-rho-out').innerText = rhoC.toExponential(2);
-      document.getElementById('qm-dt-out').innerText = dtBound.toExponential(2);
-      document.getElementById('qm-bg-out').innerText = bg.toExponential(2);
-      document.getElementById('qm-gap-orders').innerText = gapOrders.toFixed(1);
-      document.getElementById('qm-gw-out').innerText = gwPower.toExponential(2);
+function updateCost(){
+
+  if(!state.model){
+
+    return;
+
+  }
+
+
+  const threshold=
+    Number(
+      document.getElementById(
+        "threshold"
+      ).value
+    )/100;
+
+
+  const metrics=
+    calculateMetrics(
+      state.test,
+      state.model,
+      threshold
+    );
+
+
+  const fpCost=
+    Number(
+      document.getElementById(
+        "fpCost"
+      ).value
+    )||0;
+
+
+  const fnCost=
+    Number(
+      document.getElementById(
+        "fnCost"
+      ).value
+    )||0;
+
+
+  const totalCost=
+    metrics.fp*fpCost+
+    metrics.fn*fnCost;
+
+
+  document.getElementById(
+    "thresholdDisplay"
+  ).textContent=
+    Math.round(
+      threshold*100
+    );
+
+
+  document.getElementById(
+    "costPrecision"
+  ).textContent=
+    percent(
+      metrics.precision
+    );
+
+
+  document.getElementById(
+    "costRecall"
+  ).textContent=
+    percent(
+      metrics.recall
+    );
+
+
+  document.getElementById(
+    "costF1"
+  ).textContent=
+    percent(
+      metrics.f1
+    );
+
+
+  document.getElementById(
+    "costFP"
+  ).textContent=
+    metrics.fp.toLocaleString();
+
+
+  document.getElementById(
+    "costFN"
+  ).textContent=
+    metrics.fn.toLocaleString();
+
+
+  document.getElementById(
+    "estimatedCost"
+  ).textContent=
+    "₹"+
+    Math.round(
+      totalCost
+    ).toLocaleString(
+      "en-IN"
+    );
+
+
+  document.getElementById(
+    "bigCost"
+  ).textContent=
+    "₹"+
+    Math.round(
+      totalCost
+    ).toLocaleString(
+      "en-IN"
+    );
+
+}
+
+
+/* ---------------- AUDIT ---------------- */
+
+function renderAudit(){
+
+  const container=
+    document.getElementById(
+      "auditList"
+    );
+
+
+  if(
+    !state.audit.length
+  ){
+
+    container.innerHTML=`
+
+      <div class="reason">
+        No decisions yet.
+        Run the Live Risk Engine.
+      </div>
+
+    `;
+
+    return;
+
+  }
+
+
+  container.innerHTML=
+    state.audit
+      .map(
+        event=>`
+
+        <div class="audit-event">
+
+          <div class="audit-time">
+            ${event.time}
+          </div>
+
+          <div>
+
+            <b>
+              ${event.id}
+            </b>
+
+            <br>
+
+            <span class="muted">
+              ${event.reasons
+                .slice(0,2)
+                .join(" · ")}
+            </span>
+
+          </div>
+
+          <span
+            class="badge ${
+              event.level==="HIGH"
+              ? "red"
+              : event.level==="MEDIUM"
+              ? "yellow"
+              : "green"
+            }"
+          >
+            ${event.score}
+            ·
+            ${event.decision}
+          </span>
+
+        </div>
+
+      `
+      )
+      .join("");
+
+}
+
+
+function clearAudit(){
+
+  state.audit=[];
+
+  document.getElementById(
+    "kEvents"
+  ).textContent="0";
+
+  renderAudit();
+
+}
+
+
+/* ---------------- NAVIGATION ---------------- */
+
+function go(view){
+
+  document
+    .querySelectorAll(".view")
+    .forEach(
+      element=>
+        element.classList.remove(
+          "active"
+        )
+    );
+
+
+  document
+    .getElementById(view)
+    .classList.add(
+      "active"
+    );
+
+
+  document
+    .querySelectorAll(".nav button")
+    .forEach(
+      button=>
+        button.classList.toggle(
+          "active",
+          button.dataset.view===view
+        )
+    );
+
+
+  const labels={
+
+    overview:"Overview",
+
+    transactions:"Transactions",
+
+    risk:"Live Risk Engine",
+
+    evaluation:"Model Evaluation",
+
+    optimizer:"Cost Optimizer",
+
+    audit:"Audit Trail"
+
+  };
+
+
+  document.getElementById(
+    "crumb"
+  ).textContent=
+    labels[view];
+
+
+  window.scrollTo({
+    top:0,
+    behavior:"smooth"
+  });
+
+}
+
+
+/* ---------------- NAV EVENTS ---------------- */
+
+document
+  .querySelectorAll(".nav button")
+  .forEach(
+    button=>{
+
+      button.addEventListener(
+        "click",
+        ()=>{
+          go(
+            button.dataset.view
+          );
+        }
+      );
+
     }
+  );
 
-    function drawGravity() {
-      const canvas = document.getElementById('gravityCanvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      const w = canvas.width = canvas.parentElement.clientWidth;
-      const h = canvas.height = 380;
 
-      ctx.clearRect(0, 0, w, h);
+/* ---------------- START ---------------- */
 
-      // Draw Casimir Energy Curve (Logarithmic profile)
-      ctx.fillStyle = '#0f172a';
-      ctx.fillRect(40, 30, w - 80, h - 70);
-      ctx.strokeStyle = '#1e293b';
-      ctx.strokeRect(40, 30, w - 80, h - 70);
+window.addEventListener(
+  "load",
+  initialize
+);
 
-      // Axes & grid
-      ctx.strokeStyle = '#334155';
-      ctx.beginPath();
-      ctx.moveTo(80, 50);
-      ctx.lineTo(80, h - 60);
-      ctx.lineTo(w - 60, h - 60);
-      ctx.stroke();
+</script>
 
-      ctx.fillStyle = '#94a3b8';
-      ctx.font = '11px monospace';
-      ctx.fillText('CASIMIR NEGATIVE ENERGY DENSITY DIVERGENCE (log |T00| vs d)', 90, 48);
-      ctx.fillText('Plate Separation d (nm) →', w / 2 - 60, h - 45);
-
-      // Plot 1/d^4 curve
-      ctx.strokeStyle = '#a855f7';
-      ctx.lineWidth = 2.5;
-      ctx.beginPath();
-      for (let px = 80; px <= w - 70; px += 4) {
-        const normX = (px - 80) / (w - 150);
-        const dNm = 1.0 + normX * 40.0;
-        // scaled y
-        const normY = Math.min(1.0, Math.pow(1.0 / dNm, 0.65));
-        const py = (h - 60) - normY * (h - 130);
-        if (px === 80) ctx.moveTo(px, py);
-        else ctx.lineTo(px, py);
-      }
-      ctx.stroke();
-
-      // QEI Bound Shading (Prohibited Region)
-      ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
-      ctx.fillRect(80, 50, w - 150, 70);
-      ctx.fillStyle = '#f87171';
-      ctx.font = '11px sans-serif';
-      ctx.fillText('Ford-Roman QEI Prohibited Regime (Static Macroscopic Negative Energy)', 95, 75);
-    }
-
-    // Initialize on page load
-    window.onload = function() {
-      updateHts();
-      updateEhd();
-      updateAcoustic();
-      updateGravity();
-      drawHts();
-      drawEhd();
-      drawAcoustic();
-      drawGravity();
-    };
-
-    window.onresize = function() {
-      drawHts();
-      drawEhd();
-      drawAcoustic();
-      drawGravity();
-    };
-  </script>
 </body>
 </html>
